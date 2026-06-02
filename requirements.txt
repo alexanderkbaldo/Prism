@@ -1,0 +1,16 @@
+# Core runtime dependencies for all Prism services.
+pydantic>=2.6,<3
+pydantic-settings>=2.2,<3
+redis>=5.0,<6
+psycopg2-binary>=2.9,<3
+httpx>=0.27,<0.29
+python-dateutil>=2.9,<3
+prefect>=3.0,<4
+
+# Query API.
+fastapi>=0.110,<1
+uvicorn[standard]>=0.29,<1
+
+# Source-specific clients (optional at runtime; imported lazily).
+praw>=7.7,<8            # Reddit
+pytrends>=4.9,<5        # Google Trends
