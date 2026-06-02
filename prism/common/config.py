@@ -73,12 +73,12 @@ class Settings(BaseSettings):
     # own; setting it here lets pydantic surface it and pass it explicitly.
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
-    # Model used to synthesise the daily research brief. NOTE:
-    # claude-sonnet-4-20250514 is Sonnet 4.0 (deprecated, retires 2026-06-15);
-    # claude-sonnet-4-6 is the recommended current Sonnet. Override via env.
-    claude_model: str = Field(default="claude-sonnet-4-20250514")
+    # Model used to synthesise the daily research brief. claude-sonnet-4-6 is
+    # the current Sonnet (claude-sonnet-4-20250514 / Sonnet 4.0 is deprecated,
+    # retires 2026-06-15). Override via env.
+    claude_model: str = Field(default="claude-sonnet-4-6")
     # Per-signal secondary scorers.
-    claude_scoring_model: str = Field(default="claude-sonnet-4-20250514")
+    claude_scoring_model: str = Field(default="claude-sonnet-4-6")
     openai_model: str = Field(default="gpt-4o")
     # Window of signals fed into each daily brief.
     brief_lookback_hours: int = Field(default=24)

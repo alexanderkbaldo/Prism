@@ -16,7 +16,7 @@ x-app-env: &app-env
   # AI keys pass through from the host / .env (blank = features disabled).
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-  CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-20250514}
+  CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-6}
 
 services:
   postgres:
