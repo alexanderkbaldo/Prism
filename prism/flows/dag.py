@@ -72,13 +72,30 @@ def ingest_all() -> dict[str, int]:
     return {name: _run_scraper(name) for name in _SCRAPERS}
 
 
-# (flow object, daily cron) — staggered across the early-UTC hours.
+@flow(name="prism-daily-brief", log_prints=True)
+def daily_brief_flow() -> dict[str, int | None]:
+    """Synthesise the daily Claude research brief for every company.
+
+    Scheduled after the scrapers finish so each brief sees the day's full
+    signal set. The normaliser must have drained the stream into Postgres by
+    then; the 30-minute gap after the last scraper (07:00) covers that.
+    """
+    from prism.ai.synthesis import refresh_all
+
+    results = refresh_all()
+    get_run_logger().info("daily brief refresh: %s", results)
+    return results
+
+
+# (flow object, daily cron) — staggered across the early-UTC hours; the brief
+# runs at 07:30, after the last scraper (07:00) so it sees the full day's data.
 _DEPLOYMENTS = [
     (sentiment_flow, "0 6 * * *"),
     (hiring_flow, "15 6 * * *"),
     (google_trends_flow, "30 6 * * *"),
     (app_reviews_flow, "45 6 * * *"),
     (sec_edgar_flow, "0 7 * * *"),
+    (daily_brief_flow, "30 7 * * *"),
 ]
 
 
@@ -97,6 +114,8 @@ def main() -> None:
         name = sys.argv[2]
         if name == "all":
             print(ingest_all())
+        elif name == "brief":
+            print(daily_brief_flow())
         else:
             print({name: _run_scraper.fn(name)})
         return

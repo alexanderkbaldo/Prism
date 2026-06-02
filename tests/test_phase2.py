@@ -54,12 +54,14 @@ def test_api_healthz():
     assert client.get("/healthz").json() == {"status": "ok"}
 
 
-def test_api_signals_mock_filtering():
-    # DB is absent in unit tests, so the endpoint serves labelled mock data.
+def test_api_signals_filtering():
+    # Works whether the endpoint serves DB rows or the mock fallback: every
+    # returned signal must match the requested filters.
     r = client.get("/signals", params={"company": "HOOD", "type": "sentiment"}).json()
-    assert r["source"] == "mock"
-    assert all(s["ticker"] == "HOOD" for s in r["signals"])
-    assert r["signals"], "expected at least one mock HOOD sentiment signal"
+    assert r["source"] in {"db", "mock"}
+    for s in r["signals"]:
+        assert (s.get("ticker") or "").upper() == "HOOD"
+        assert s["category"] == "sentiment"
 
 
 def test_api_companies_lists_five():

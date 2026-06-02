@@ -37,6 +37,9 @@ CREATE TABLE IF NOT EXISTS signals (
     event_timestamp TIMESTAMPTZ NOT NULL,      -- always UTC
     -- Plain-English, Claude-ready description of the signal (Phase 2 input).
     summary_text    TEXT,
+    -- Secondary AI scores per signal: {"claude": {...}, "gpt4o": {...},
+    -- "divergence": {...}}. Populated asynchronously by the normaliser.
+    model_scores    JSONB       NOT NULL DEFAULT '{}'::jsonb,
     metrics         JSONB       NOT NULL DEFAULT '{}'::jsonb,
     dedup_hash      TEXT        NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -71,6 +74,29 @@ CREATE TABLE IF NOT EXISTS alerts (
 
 CREATE INDEX IF NOT EXISTS idx_alerts_company    ON alerts (company);
 CREATE INDEX IF NOT EXISTS idx_alerts_created_at ON alerts (created_at DESC);
+
+-- AI-generated daily research briefs (one current row surfaced per company; the
+-- table is append-only so prior briefs remain for history/audit).
+CREATE TABLE IF NOT EXISTS company_briefs (
+    id           BIGSERIAL PRIMARY KEY,
+    company      TEXT        NOT NULL,
+    ticker       TEXT,
+    generated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    model        TEXT,                       -- model that produced the brief
+    signal_count INTEGER,                    -- how many signals fed the brief
+    brief_text   TEXT        NOT NULL        -- the synthesised brief (markdown)
+);
+
+CREATE INDEX IF NOT EXISTS idx_briefs_company_gen
+    ON company_briefs (company, generated_at DESC);
+
+-- Idempotent migrations for existing databases (CREATE ... IF NOT EXISTS above
+-- only adds objects on a fresh DB; these ALTERs upgrade a populated one without
+-- touching existing rows). Safe to re-run.
+ALTER TABLE signals
+    ADD COLUMN IF NOT EXISTS model_scores JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE signals
+    ADD COLUMN IF NOT EXISTS summary_text TEXT;
 
 -- Convenience view: daily per-company sentiment + volume rollup.
 CREATE OR REPLACE VIEW daily_company_signals AS

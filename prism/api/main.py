@@ -84,6 +84,24 @@ def get_alerts(
         return {"source": "mock", "count": 0, "alerts": []}
 
 
+@app.get("/brief")
+def get_brief(
+    company: str = Query(..., description="Ticker (HOOD) or name (Robinhood)"),
+) -> dict[str, Any]:
+    """Return the latest AI-generated research brief for a company."""
+    try:
+        from prism.common.db import get_latest_brief
+
+        row = get_latest_brief(company)
+        if row:
+            return {"source": "db", "brief": _serialise(row)}
+        return {"source": "db", "brief": None,
+                "message": f"No brief yet for {company}."}
+    except Exception:  # noqa: BLE001 - DB not up; serve a mock brief
+        log.exception("brief query failed; returning mock data")
+        return {"source": "mock", "brief": _mock_brief(company)}
+
+
 def _serialise(row: dict) -> dict:
     """Make a DB row JSON-safe (datetimes -> ISO strings)."""
     out = dict(row)
@@ -114,6 +132,30 @@ def _mock_signals(company: str | None, category: str | None) -> list[dict]:
         out.append({**s, "id": i + 1,
                     "event_timestamp": (now - timedelta(hours=i)).isoformat()})
     return out
+
+
+def _mock_brief(company: str) -> dict:
+    ticker = company.upper()
+    match = next((c for c in COMPANIES
+                  if c.ticker == ticker or c.name.lower() == company.lower()), None)
+    return {
+        "company": match.name if match else company,
+        "ticker": match.ticker if match else ticker,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "model": "mock",
+        "signal_count": 3,
+        "brief_text": (
+            f"## Sentiment Trend\nRetail sentiment on {ticker} is mildly "
+            "positive, led by options-revenue chatter.\n\n"
+            "## Hiring Signal\nActive senior engineering postings suggest "
+            "continued investment.\n\n"
+            "## Search Momentum\nSearch interest is steady week-over-week.\n\n"
+            "## App Store Signal\nApp ratings remain high (~4.5★).\n\n"
+            "## Regulatory Activity\nNo material SEC filings in the window.\n\n"
+            "**Bottom line:** constructive across data sources; no red flags. "
+            "(mock data — Postgres not reachable)"
+        ),
+    }
 
 
 def serve() -> None:

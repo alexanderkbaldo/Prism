@@ -68,6 +68,28 @@ class Settings(BaseSettings):
     # EDGAR is fully public but requires a descriptive User-Agent with contact.
     sec_user_agent: str = Field(default="Prism prism@example.com")
 
+    # --- AI synthesis & multi-model scoring (Phase 2) ------------------
+    # The Anthropic SDK reads ANTHROPIC_API_KEY from the environment on its
+    # own; setting it here lets pydantic surface it and pass it explicitly.
+    anthropic_api_key: str | None = None
+    openai_api_key: str | None = None
+    # Model used to synthesise the daily research brief. NOTE:
+    # claude-sonnet-4-20250514 is Sonnet 4.0 (deprecated, retires 2026-06-15);
+    # claude-sonnet-4-6 is the recommended current Sonnet. Override via env.
+    claude_model: str = Field(default="claude-sonnet-4-20250514")
+    # Per-signal secondary scorers.
+    claude_scoring_model: str = Field(default="claude-sonnet-4-20250514")
+    openai_model: str = Field(default="gpt-4o")
+    # Window of signals fed into each daily brief.
+    brief_lookback_hours: int = Field(default=24)
+    brief_max_signals: int = Field(default=120)
+    # Multi-model scoring runs inline in the normaliser. It costs two LLM calls
+    # per scored signal, so it only fires when keys are present AND this is on.
+    enable_model_scoring: bool = Field(default=True)
+    # Models are flagged as disagreeing when their sentiment scores differ by
+    # more than this absolute amount.
+    model_divergence_threshold: float = Field(default=0.3)
+
 
 @lru_cache
 def get_settings() -> Settings:

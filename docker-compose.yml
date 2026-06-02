@@ -13,6 +13,10 @@ x-app-env: &app-env
   REDIS_URL: redis://redis:6379/0
   DATABASE_URL: postgresql://prism:prism@postgres:5432/prism
   ALLOW_SAMPLE_DATA: "true"
+  # AI keys pass through from the host / .env (blank = features disabled).
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-20250514}
 
 services:
   postgres:
@@ -57,7 +61,23 @@ services:
       timeout: 5s
       retries: 12
 
-  # Serves the scraper deployments and runs them on their daily cron.
+  # One-shot schema migration. init.sql runs only on a fresh Postgres volume;
+  # this applies the (idempotent) schema to existing volumes too, so the Phase 2
+  # company_briefs table and model_scores column are present before workers boot.
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: python -m prism.common.migrate
+    environment:
+      <<: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # Serves the scraper deployments and runs them on their daily cron (incl. the
+  # 07:30 daily Claude brief).
   prefect-worker:
     build:
       context: .
@@ -71,8 +91,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   # Always-on consumer of the Redis stream. Scale with: --scale normaliser=3
   normaliser:
@@ -85,8 +105,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   # Query API (FastAPI) at http://localhost:8000  (docs at /docs)
@@ -100,8 +120,8 @@ services:
     environment:
       <<: *app-env
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:

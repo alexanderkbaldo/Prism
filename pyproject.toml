@@ -14,6 +14,8 @@ dependencies = [
     "prefect>=3.0,<4",
     "fastapi>=0.110,<1",
     "uvicorn[standard]>=0.29,<1",
+    "anthropic>=0.40,<1",
+    "openai>=1.40,<2",
     "praw>=7.7,<8",
     "pytrends>=4.9,<5",
 ]
@@ -30,6 +32,8 @@ prism-reviews = "prism.scrapers.app_reviews:main"
 prism-edgar = "prism.scrapers.sec_edgar:main"
 prism-flows = "prism.flows.dag:main"
 prism-api = "prism.api.main:serve"
+prism-brief = "prism.ai.synthesis:main"
+prism-migrate = "prism.common.migrate:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

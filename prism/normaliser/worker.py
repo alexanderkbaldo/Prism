@@ -29,6 +29,7 @@ from prism.common.schemas import (
     RawEvent,
     Signal,
 )
+from prism.ai import scoring
 from prism.normaliser import anomaly, dedup
 from prism.normaliser.sentiment import score
 from prism.normaliser.summaries import build as build_summary
@@ -93,6 +94,14 @@ class Normaliser:
                 written += 1
                 # Anomaly detection runs inline on each freshly stored signal.
                 anomaly.check(sig, signal_id)
+                # Secondary AI scoring (Claude + GPT-4o) — no-op unless enabled
+                # and keys are configured.
+                if scoring.should_score(sig.category, sig.summary_text):
+                    try:
+                        scoring.score(signal_id, sig.category, sig.summary_text)
+                    except Exception:  # noqa: BLE001 - never block ingestion
+                        log.exception("model scoring failed for signal %s",
+                                      signal_id)
         return written
 
     def run(self) -> None:

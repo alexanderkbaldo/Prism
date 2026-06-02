@@ -177,7 +177,7 @@ def query_signals(
         cur.execute(
             f"""
             SELECT id, source, category, company, ticker, title, sentiment,
-                   url, event_timestamp, summary_text, metrics
+                   url, event_timestamp, summary_text, model_scores, metrics
             FROM signals
             WHERE {where}
             ORDER BY event_timestamp DESC
@@ -211,3 +211,74 @@ def query_alerts(company: str | None = None, days: int = 7,
             params,
         )
         return cur.fetchall()
+
+
+def update_model_scores(signal_id: int, scores: dict) -> None:
+    """Attach secondary AI scores to a signal row (Phase 2 scoring path)."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE signals SET model_scores = %s WHERE id = %s",
+            (json.dumps(scores), signal_id),
+        )
+
+
+def recent_signals_for_company(company: str, hours: int, limit: int) -> list[dict]:
+    """Signals for one company over the trailing window, newest first.
+
+    `company` matches either ticker or canonical name. Used to assemble the
+    daily Claude brief, so it returns the Claude-ready `summary_text`.
+    """
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, source, category, company, ticker, title, sentiment,
+                   url, event_timestamp, summary_text, metrics
+            FROM signals
+            WHERE (upper(ticker) = upper(%(company)s)
+                   OR lower(company) = lower(%(company)s))
+              AND event_timestamp >= now() - (%(hours)s * interval '1 hour')
+            ORDER BY event_timestamp DESC
+            LIMIT %(limit)s
+            """,
+            {"company": company, "hours": hours, "limit": limit},
+        )
+        return cur.fetchall()
+
+
+def insert_brief(
+    company: str,
+    ticker: str | None,
+    model: str,
+    signal_count: int,
+    brief_text: str,
+) -> int:
+    """Persist a generated research brief; returns its row id."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO company_briefs
+                (company, ticker, model, signal_count, brief_text)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (company, ticker, model, signal_count, brief_text),
+        )
+        return cur.fetchone()["id"]
+
+
+def get_latest_brief(company: str) -> dict | None:
+    """Most recent brief for a company (ticker or name match)."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, company, ticker, generated_at, model, signal_count,
+                   brief_text
+            FROM company_briefs
+            WHERE upper(ticker) = upper(%(company)s)
+               OR lower(company) = lower(%(company)s)
+            ORDER BY generated_at DESC
+            LIMIT 1
+            """,
+            {"company": company},
+        )
+        return cur.fetchone()
