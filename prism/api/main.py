@@ -19,6 +19,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import FastAPI, Query
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from prism.common.companies import COMPANIES
 
@@ -100,6 +102,33 @@ def get_brief(
     except Exception:  # noqa: BLE001 - DB not up; serve a mock brief
         log.exception("brief query failed; returning mock data")
         return {"source": "mock", "brief": _mock_brief(company)}
+
+
+class ChatRequest(BaseModel):
+    question: str
+    company: str  # ticker (HOOD) or canonical name (Robinhood)
+
+
+@app.post("/chat")
+def chat(req: ChatRequest) -> StreamingResponse:
+    """Answer a question about one company, grounded in its Prism data.
+
+    Fetches the company's recent signals, alerts, and latest research brief,
+    passes them to Claude as context, and streams the answer back as
+    text/plain chunks (consume incrementally on the client).
+    """
+    from prism.ai.chat import stream_answer
+
+    def generate():
+        try:
+            yield from stream_answer(req.question, req.company)
+        except ValueError as e:
+            yield f"[error] {e}"
+        except Exception:  # noqa: BLE001
+            log.exception("chat failed")
+            yield "[error] Something went wrong generating the answer."
+
+    return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
 
 
 def _serialise(row: dict) -> dict:

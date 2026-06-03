@@ -3,6 +3,7 @@ import CompanySelector from "./components/CompanySelector";
 import SignalCards from "./components/SignalCards";
 import AlertsSection from "./components/AlertsSection";
 import ResearchBrief from "./components/ResearchBrief";
+import ChatPanel from "./components/ChatPanel";
 
 const COMPANY_NAMES = {
   HOOD: "Robinhood",
@@ -71,6 +72,7 @@ export default function App() {
           {/* Left — signals */}
           <div style={styles.left}>
             <SignalCards ticker={ticker} />
+            <ChatPanel ticker={ticker} />
           </div>
 
           {/* Right — alerts + brief */}
