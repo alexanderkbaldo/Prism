@@ -71,6 +71,23 @@ Defined once in `prism/common/companies.py`.
 Each scraper falls back to deterministic **sample data** when its credentials are
 absent, so the whole pipeline runs with zero keys configured.
 
+## Frontend dashboard
+
+A React dashboard lives in `frontend/`. It connects to the FastAPI backend at
+`localhost:8000` and shows live signal cards, anomaly alerts, and the daily
+research brief for each company.
+
+```bash
+cd frontend
+npm install
+npm run dev        # → http://localhost:5173
+```
+
+Requires Node 18+. The Vite dev server proxies all `/api/*` requests to
+`localhost:8000`, so start the backend first (`docker compose up -d` or
+`uvicorn prism.api.main:app --reload --port 8000`). The dashboard renders
+clearly-labelled mock data if the API is unreachable.
+
 ## Quick start
 
 ```bash
