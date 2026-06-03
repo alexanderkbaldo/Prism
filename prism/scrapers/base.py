@@ -17,6 +17,13 @@ from prism.common.schemas import RawEvent
 
 log = logging.getLogger(__name__)
 
+# httpx logs the full request URL at INFO level. Some scrapers (SerpApi) pass
+# their API key as a query parameter, so an INFO-level httpx log would leak the
+# key into stdout/log aggregators. Force its logger (and httpcore's) to WARNING
+# so secrets never reach the logs, regardless of the app's root log level.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 
 class BaseScraper(abc.ABC):
     #: short stable identifier, e.g. "reddit"
