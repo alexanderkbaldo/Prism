@@ -144,11 +144,11 @@ const styles = {
   root: {
     position: "fixed",
     bottom: "28px",
-    left: "28px",
+    right: "28px",
     zIndex: 1000,
     display: "flex",
     flexDirection: "column",
-    alignItems: "flex-start",
+    alignItems: "flex-end",
     gap: "14px",
   },
   launcher: {

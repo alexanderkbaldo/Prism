@@ -73,9 +73,9 @@ export default function App() {
 const styles = {
   page: { minHeight: "100vh" },
   column: {
-    maxWidth: "860px",
+    maxWidth: "1440px",
     margin: "0 auto",
-    padding: "0 32px 80px",
+    padding: "0 56px 80px",
   },
   hero: { marginTop: "64px" },
   nameRow: {
