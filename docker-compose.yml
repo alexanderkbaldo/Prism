@@ -110,6 +110,23 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
+  # Background multi-model scoring, decoupled from ingestion (scoring_mode=worker).
+  # Scores unscored signals with Claude + GPT-4o behind a per-model circuit
+  # breaker. Scale with: --scale scorer=2
+  scorer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: python -m prism.ai.scorer
+    environment:
+      <<: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
   # Query API (FastAPI) at http://localhost:8000  (docs at /docs)
   api:
     build:

@@ -15,6 +15,7 @@ import logging
 from typing import Any
 
 from prism.ai import claude_client, openai_client
+from prism.ai.circuit_breaker import CircuitBreaker
 from prism.common.config import settings
 from prism.common.db import update_model_scores
 
@@ -22,6 +23,13 @@ log = logging.getLogger(__name__)
 
 # Categories where a secondary AI read adds value (text-bearing / regulatory).
 SCORABLE_CATEGORIES = {"sentiment", "reviews", "filings"}
+
+# One breaker per provider so a throttled/out-of-quota key short-circuits fast
+# instead of stalling every signal behind SDK retries.
+_breaker = CircuitBreaker(
+    settings.scoring_breaker_threshold,
+    settings.scoring_breaker_cooldown_seconds,
+)
 
 
 def enabled() -> bool:
@@ -34,6 +42,23 @@ def should_score(category: str, summary_text: str | None) -> bool:
     return bool(summary_text) and category in SCORABLE_CATEGORIES and enabled()
 
 
+def _call(name: str, configured: bool, fn) -> dict[str, Any] | None:
+    """Invoke one model scorer behind the circuit breaker.
+
+    Skips the call when the model isn't configured or its breaker is open;
+    records success/failure to drive the breaker (a None result counts as a
+    failure, which is what a throttled or dead key produces).
+    """
+    if not configured or not _breaker.allow(name):
+        return None
+    result = fn()
+    if result is None:
+        _breaker.record_failure(name)
+    else:
+        _breaker.record_success(name)
+    return result
+
+
 def score(signal_id: int, category: str, summary_text: str) -> dict[str, Any] | None:
     """Score one signal with both models and persist to model_scores.
 
@@ -41,15 +66,15 @@ def score(signal_id: int, category: str, summary_text: str) -> dict[str, Any] | 
     """
     scores: dict[str, Any] = {}
 
-    if claude_client.is_configured():
-        claude = claude_client.score_signal(summary_text, category)
-        if claude is not None:
-            scores["claude"] = claude
+    claude = _call("claude", claude_client.is_configured(),
+                   lambda: claude_client.score_signal(summary_text, category))
+    if claude is not None:
+        scores["claude"] = claude
 
-    if openai_client.is_configured():
-        gpt = openai_client.score_signal(summary_text, category)
-        if gpt is not None:
-            scores["gpt4o"] = gpt
+    gpt = _call("gpt4o", openai_client.is_configured(),
+                lambda: openai_client.score_signal(summary_text, category))
+    if gpt is not None:
+        scores["gpt4o"] = gpt
 
     if not scores:
         return None

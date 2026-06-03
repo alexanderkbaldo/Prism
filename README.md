@@ -46,7 +46,9 @@ hand straight to the Claude API.
 - **Multi-model scoring** (`prism/ai/scoring.py`): for text-bearing signals,
   Claude (nuanced sentiment + regulatory read) and GPT-4o (fast structured
   score) each score the signal; both — plus a >0.3 disagreement flag — land in
-  `signals.model_scores`. No-op unless keys are set and `ENABLE_MODEL_SCORING`.
+  `signals.model_scores`. Runs **off the ingestion hot path** in the dedicated
+  `scorer` service (`scoring_mode=worker`) so the normaliser drains fast, with a
+  **per-model circuit breaker** so a throttled/out-of-quota key can't stall it.
 - **Claude synthesis** (`prism/ai/synthesis.py`): a Prefect deployment runs at
   07:30 daily (after the scrapers), batches each company's last-24h signals,
   and has Claude write a structured research brief into `company_briefs`. Uses
@@ -148,11 +150,15 @@ Both AI paths are **off unless keys are set** (`ANTHROPIC_API_KEY`,
   regulatory) into `company_briefs`. Static instructions are prompt-cached.
   > `claude-sonnet-4-20250514` is Sonnet 4.0, **deprecated (retires 2026-06-15)**
   > — set `CLAUDE_MODEL=claude-sonnet-4-6` to use the current Sonnet.
-- **Multi-model scoring** — `prism/ai/scoring.py` runs inline in the normaliser
-  for text-bearing signals: Claude + GPT-4o each score, and `model_scores`
-  records both plus a `divergence` flag when their sentiment reads differ by
-  more than `MODEL_DIVERGENCE_THRESHOLD` (0.3). Two LLM calls per scored signal
-  — set `ENABLE_MODEL_SCORING=false` to disable even when keys are present.
+- **Multi-model scoring** — `prism/ai/scoring.py` scores text-bearing signals
+  with Claude + GPT-4o; `model_scores` records both plus a `divergence` flag
+  when their sentiment reads differ by more than `MODEL_DIVERGENCE_THRESHOLD`
+  (0.3). `SCORING_MODE` controls where it runs: **`worker`** (default — the
+  `scorer` service scores off the hot path, so ingestion stays fast), `inline`
+  (normaliser scores as it ingests), or `off`. A per-model circuit breaker
+  (`SCORING_BREAKER_*`) pauses a model after consecutive failures (e.g. a
+  throttled key) so it can't stall scoring. Set `ENABLE_MODEL_SCORING=false` to
+  disable entirely.
 
 ## Local (no Docker)
 

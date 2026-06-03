@@ -222,6 +222,28 @@ def update_model_scores(signal_id: int, scores: dict) -> None:
         )
 
 
+def unscored_signals(categories: list[str], limit: int) -> list[dict]:
+    """Text-bearing signals that haven't been model-scored yet, newest first.
+
+    Drives the background `scorer` worker. `model_scores = '{}'` means no scorer
+    has touched the row.
+    """
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, category, summary_text
+            FROM signals
+            WHERE model_scores = '{}'::jsonb
+              AND summary_text IS NOT NULL
+              AND category = ANY(%s)
+            ORDER BY id DESC
+            LIMIT %s
+            """,
+            (categories, limit),
+        )
+        return cur.fetchall()
+
+
 def recent_signals_for_company(company: str, hours: int, limit: int) -> list[dict]:
     """Signals for one company over the trailing window, newest first.
 

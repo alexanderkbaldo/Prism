@@ -87,12 +87,27 @@ class Settings(BaseSettings):
     # Window of signals fed into each daily brief.
     brief_lookback_hours: int = Field(default=24)
     brief_max_signals: int = Field(default=120)
-    # Multi-model scoring runs inline in the normaliser. It costs two LLM calls
-    # per scored signal, so it only fires when keys are present AND this is on.
+    # Multi-model scoring makes two LLM calls per scored signal, so it only
+    # fires when keys are present AND this is on.
     enable_model_scoring: bool = Field(default=True)
     # Models are flagged as disagreeing when their sentiment scores differ by
     # more than this absolute amount.
     model_divergence_threshold: float = Field(default=0.3)
+    # Where scoring runs:
+    #   "worker" (default) — the dedicated `scorer` service scores signals off
+    #     the ingestion hot path, so the normaliser drains fast.
+    #   "inline" — the normaliser scores each signal as it ingests (simple, but
+    #     blocks the consumer on LLM latency).
+    #   "off" — no model scoring.
+    scoring_mode: str = Field(default="worker")
+    # Background scorer batch size and idle sleep when there's nothing to score.
+    scorer_batch_size: int = Field(default=25)
+    scorer_idle_seconds: int = Field(default=15)
+    # Circuit breaker: after N consecutive failures for a model (e.g. a throttled
+    # or out-of-quota key), stop calling it for `cooldown` seconds so it can't
+    # stall scoring with retries. A success resets the counter.
+    scoring_breaker_threshold: int = Field(default=3)
+    scoring_breaker_cooldown_seconds: int = Field(default=300)
 
 
 @lru_cache

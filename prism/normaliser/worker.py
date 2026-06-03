@@ -21,6 +21,7 @@ import socket
 import time
 
 from prism.common.companies import tag_companies
+from prism.common.config import settings
 from prism.common.db import insert_raw_event, insert_signal
 from prism.common.redis_client import ack, ensure_group, read_group
 from prism.common.schemas import (
@@ -94,9 +95,11 @@ class Normaliser:
                 written += 1
                 # Anomaly detection runs inline on each freshly stored signal.
                 anomaly.check(sig, signal_id)
-                # Secondary AI scoring (Claude + GPT-4o) — no-op unless enabled
-                # and keys are configured.
-                if scoring.should_score(sig.category, sig.summary_text):
+                # Secondary AI scoring only runs inline in "inline" mode; the
+                # default "worker" mode defers it to the `scorer` service so
+                # ingestion never blocks on LLM latency.
+                if (settings.scoring_mode == "inline"
+                        and scoring.should_score(sig.category, sig.summary_text)):
                     try:
                         scoring.score(signal_id, sig.category, sig.summary_text)
                     except Exception:  # noqa: BLE001 - never block ingestion
