@@ -83,18 +83,20 @@ const styles = {
     lineHeight: 1.5,
     color: "var(--muted)",
     marginTop: "28px",
+    marginBottom: "40px",
   },
   h2: {
     fontFamily: "var(--serif)",
     fontSize: "22px",
     fontWeight: 400,
     color: "var(--ink)",
-    marginTop: "44px",
-    marginBottom: "12px",
+    marginTop: "60px",
+    marginBottom: "16px",
   },
   p: {
     fontSize: "16px",
     lineHeight: 1.7,
     color: "var(--ink)",
+    marginBottom: "20px",
   },
 };

@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import CompanySwitcher from "../components/CompanySwitcher";
 import StatRow from "../components/StatRow";
 import AnomalyLine from "../components/AnomalyLine";
 import Brief from "../components/Brief";
-import ChatLauncher from "../components/ChatLauncher";
 import Footer from "../components/Footer";
 import { useBrief } from "../hooks/useApi";
 
@@ -43,14 +42,12 @@ function Hero({ ticker }) {
   );
 }
 
-export default function Dashboard() {
-  const [ticker, setTicker] = useState("HOOD");
-
+export default function Dashboard({ ticker, onTickerChange }) {
   return (
     <div style={styles.column}>
       <div style={styles.switchRow}>
         <span className="eyebrow">Companies</span>
-        <CompanySwitcher ticker={ticker} onChange={setTicker} />
+        <CompanySwitcher ticker={ticker} onChange={onTickerChange} />
       </div>
 
       <Hero ticker={ticker} />
@@ -61,7 +58,6 @@ export default function Dashboard() {
       </div>
 
       <Footer />
-      <ChatLauncher ticker={ticker} />
     </div>
   );
 }
