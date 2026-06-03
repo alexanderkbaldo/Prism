@@ -26,9 +26,8 @@ export default function Home() {
           Fintech intelligence before the earnings call.
         </h1>
         <p style={styles.sub}>
-          Prism monitors the alternative-data signals that move fintech —
-          sentiment, hiring, search, app reviews, and filings — and uses AI to
-          turn them into readable research.
+          Prism monitors five alternative-data signals across leading fintech
+          companies and uses AI to turn them into readable research.
         </p>
         <Link to="/dashboard" style={styles.cta}>Launch dashboard</Link>
       </section>
