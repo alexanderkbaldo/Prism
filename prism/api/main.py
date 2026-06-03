@@ -19,6 +19,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -30,6 +31,19 @@ app = FastAPI(
     title="Prism API",
     version="0.1.0",
     description="Alternative-data signals for fintech equity research.",
+)
+
+# Allow the Vite dev frontend to call the API from the browser. Add the deployed
+# frontend origin(s) here when the dashboard ships to a real URL.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 VALID_TYPES = ["sentiment", "hiring", "trends", "reviews", "filings"]
