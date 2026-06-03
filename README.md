@@ -135,9 +135,19 @@ UIs: Prefect <http://localhost:4200> · API docs <http://localhost:8000/docs>.
 | `limit`   | `200`         | max rows (1–1000)                        |
 
 `GET /alerts?company=HOOD` — anomaly flags. `GET /brief?company=HOOD` — the
-latest AI-generated research brief. `GET /companies`, `GET /healthz` for
-metadata. If Postgres is unreachable the API returns clearly-labelled mock data
+latest AI-generated research brief. `POST /chat` `{question, company}` — streams
+a data-grounded Claude answer. `GET /companies`, `GET /healthz` for metadata. If
+Postgres is unreachable the API returns clearly-labelled mock data
 (`"source": "mock"`) so it can be demoed standalone.
+
+### Security (`prism/api/security.py`)
+- **Per-IP rate limiting** (Redis-backed fixed window) on all data/chat routes —
+  `RATE_LIMIT_PER_MINUTE` (default 60), with a stricter `CHAT_RATE_LIMIT_PER_MINUTE`
+  (default 10) on the LLM-backed `/chat` so it can't be spammed to burn Claude
+  credits. Fails open if Redis is down. `/healthz` is unprotected.
+- **Optional API key** — set `PRISM_API_KEY` to require an `X-API-Key` header on
+  every data/chat route (off by default). Since a public SPA exposes its key,
+  rate limiting is the primary abuse protection; the key gates non-browser access.
 
 ## AI layer (Phase 2)
 

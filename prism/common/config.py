@@ -109,6 +109,17 @@ class Settings(BaseSettings):
     scoring_breaker_threshold: int = Field(default=3)
     scoring_breaker_cooldown_seconds: int = Field(default=300)
 
+    # --- API security --------------------------------------------------
+    # Optional API key. When set, every data/chat endpoint requires a matching
+    # `X-API-Key` header (health check stays open). Note: a public SPA ships its
+    # key to the browser, so this gates non-browser access — per-IP rate limiting
+    # below is the real abuse protection. Leave blank to disable the key check.
+    prism_api_key: str | None = None
+    # Per-IP fixed-window limits (requests per minute). 0 disables a limit.
+    rate_limit_per_minute: int = Field(default=60)
+    # Stricter limit for the LLM-backed /chat endpoint (spends Claude credits).
+    chat_rate_limit_per_minute: int = Field(default=10)
+
 
 @lru_cache
 def get_settings() -> Settings:

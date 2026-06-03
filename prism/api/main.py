@@ -18,12 +18,14 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from prism.api.security import RateLimiter, require_api_key
 from prism.common.companies import COMPANIES
+from prism.common.config import settings
 
 log = logging.getLogger(__name__)
 
@@ -48,18 +50,26 @@ app.add_middleware(
 
 VALID_TYPES = ["sentiment", "hiring", "trends", "reviews", "filings"]
 
+# Auth + per-IP rate limiting applied to data/chat routes (health check stays
+# open). /chat gets a stricter limit since each call spends Claude credits.
+PROTECTED = [Depends(require_api_key),
+             Depends(RateLimiter(settings.rate_limit_per_minute, 60, "default"))]
+CHAT_PROTECTED = [Depends(require_api_key),
+                  Depends(RateLimiter(settings.chat_rate_limit_per_minute, 60,
+                                      "chat"))]
+
 
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/companies")
+@app.get("/companies", dependencies=PROTECTED)
 def companies() -> list[dict[str, str | None]]:
     return [{"name": c.name, "ticker": c.ticker} for c in COMPANIES]
 
 
-@app.get("/signals")
+@app.get("/signals", dependencies=PROTECTED)
 def get_signals(
     company: str | None = Query(None, description="Ticker (HOOD) or name (Robinhood)"),
     type: str | None = Query(None, description=f"Signal category: {VALID_TYPES}"),
@@ -82,7 +92,7 @@ def get_signals(
                 "signals": rows}
 
 
-@app.get("/alerts")
+@app.get("/alerts", dependencies=PROTECTED)
 def get_alerts(
     company: str | None = Query(None),
     days: int = Query(7, ge=1, le=90),
@@ -100,7 +110,7 @@ def get_alerts(
         return {"source": "mock", "count": 0, "alerts": []}
 
 
-@app.get("/brief")
+@app.get("/brief", dependencies=PROTECTED)
 def get_brief(
     company: str = Query(..., description="Ticker (HOOD) or name (Robinhood)"),
 ) -> dict[str, Any]:
@@ -123,7 +133,7 @@ class ChatRequest(BaseModel):
     company: str  # ticker (HOOD) or canonical name (Robinhood)
 
 
-@app.post("/chat")
+@app.post("/chat", dependencies=CHAT_PROTECTED)
 def chat(req: ChatRequest) -> StreamingResponse:
     """Answer a question about one company, grounded in its Prism data.
 
