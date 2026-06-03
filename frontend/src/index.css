@@ -1,32 +1,56 @@
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Inter:wght@400;500&display=swap");
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --teal:        #1D9E75;
-  --teal-dark:   #167a5b;
-  --teal-light:  #e6f7f2;
-  --teal-mid:    #b3e8d8;
-  --bg:          #0f1117;
-  --surface:     #1a1d27;
-  --surface2:    #22263a;
-  --border:      #2d3148;
-  --text:        #e8eaf0;
-  --text-muted:  #8892a4;
-  --red:         #e05c5c;
-  --amber:       #e0a64a;
-  --green:       #4ae09a;
-  --radius:      10px;
-  --shadow:      0 2px 12px rgba(0,0,0,0.35);
+  /* Surfaces */
+  --bg:            #E7DCCB;  /* warm sand */
+  --surface:       #DFD3C0;  /* secondary panels */
+  --hairline:      #CBBDA8;  /* borders / dividers */
+
+  /* Accent */
+  --sage:          #6B8F71;
+  --sage-soft:     #C4D4C6;
+
+  /* Text */
+  --ink:           #1A2018;  /* primary */
+  --muted:         #6E6253;
+  --faint:         #8A7D6B;
+
+  /* Signal colors */
+  --up:            #4A8A5A;
+  --down:          #B5503F;
+  --alert:         #C8614A;
+
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --sans:  "Inter", system-ui, -apple-system, sans-serif;
 }
 
-html { font-size: 15px; }
+html { font-size: 16px; }
+
 body {
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--sans);
   background: var(--bg);
-  color: var(--text);
+  color: var(--ink);
   min-height: 100vh;
-  line-height: 1.6;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--surface); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+/* Tiny letter-spaced eyebrow label — the only uppercase allowed */
+.eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+::selection { background: var(--sage-soft); }
+
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 99px; }
+
+button { font-family: inherit; }

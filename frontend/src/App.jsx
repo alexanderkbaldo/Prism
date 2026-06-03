@@ -1,39 +1,44 @@
-import React, { useState, useEffect } from "react";
-import CompanySelector from "./components/CompanySelector";
-import SignalCards from "./components/SignalCards";
-import AlertsSection from "./components/AlertsSection";
-import ResearchBrief from "./components/ResearchBrief";
-import ChatPanel from "./components/ChatPanel";
+import React, { useState } from "react";
+import TopBar from "./components/TopBar";
+import StatRow from "./components/StatRow";
+import AnomalyLine from "./components/AnomalyLine";
+import Brief from "./components/Brief";
+import ChatLauncher from "./components/ChatLauncher";
+import { useBrief } from "./hooks/useApi";
 
 const COMPANY_NAMES = {
   HOOD: "Robinhood",
   AFRM: "Affirm",
-  XYZ:  "Block",
+  XYZ: "Block",
   KLAR: "Klarna",
   CHYM: "Chime",
 };
 
-function BackendStatus() {
-  const [status, setStatus] = useState("checking");
-  useEffect(() => {
-    fetch("/api/healthz")
-      .then((r) => (r.ok ? setStatus("ok") : setStatus("error")))
-      .catch(() => setStatus("error"));
-  }, []);
+// Pull a single-sentence "read" from the brief — the bottom line if present,
+// otherwise the first substantive sentence.
+function extractRead(briefText) {
+  if (!briefText) return null;
+  const bottom = briefText.match(/\*\*Bottom line:\*\*\s*(.+)/i);
+  if (bottom) return bottom[1].replace(/\(mock[^)]*\)/i, "").trim();
+  const firstPara = briefText
+    .split("\n")
+    .map((l) => l.trim())
+    .find((l) => l && !l.startsWith("#") && !l.startsWith("*"));
+  return firstPara || null;
+}
+
+function Hero({ ticker }) {
+  const { data } = useBrief(ticker);
+  const read = extractRead(data?.brief?.brief_text);
+
   return (
-    <span
-      style={{
-        fontSize: "0.72rem",
-        fontWeight: 500,
-        display: "flex",
-        alignItems: "center",
-        gap: "5px",
-        color: status === "ok" ? "var(--green)" : status === "error" ? "var(--red)" : "var(--text-muted)",
-      }}
-    >
-      <span style={{ fontSize: "0.6rem" }}>●</span>
-      {status === "ok" ? "API connected" : status === "error" ? "API offline" : "Checking…"}
-    </span>
+    <div style={styles.hero}>
+      <div style={styles.nameRow}>
+        <h1 style={styles.name}>{COMPANY_NAMES[ticker]}</h1>
+        <span style={styles.ticker}>{ticker}</span>
+      </div>
+      {read && <p style={styles.read}>{read}</p>}
+    </div>
   );
 }
 
@@ -41,151 +46,73 @@ export default function App() {
   const [ticker, setTicker] = useState("HOOD");
 
   return (
-    <div style={styles.root}>
-      {/* Top nav */}
-      <header style={styles.header}>
-        <div style={styles.logo}>
-          <span style={styles.logoMark}>◈</span>
-          <span style={styles.logoText}>Prism</span>
-          <span style={styles.logoSub}>Alternative Data</span>
-        </div>
-        <BackendStatus />
-      </header>
+    <div style={styles.page}>
+      <div style={styles.column}>
+        <TopBar ticker={ticker} onChange={setTicker} />
 
-      <main style={styles.main}>
-        {/* Page title */}
-        <div style={styles.titleRow}>
-          <div>
-            <h1 style={styles.pageTitle}>
-              {COMPANY_NAMES[ticker]}{" "}
-              <span style={styles.pageTicker}>({ticker})</span>
-            </h1>
-            <p style={styles.pageSubtitle}>Fintech alternative data signals · last 7 days</p>
+        <main>
+          <Hero ticker={ticker} />
+          <StatRow ticker={ticker} />
+          <AnomalyLine ticker={ticker} />
+          <div style={styles.briefWrap}>
+            <Brief ticker={ticker} />
           </div>
-        </div>
+        </main>
 
-        {/* Company selector */}
-        <CompanySelector selected={ticker} onChange={setTicker} />
+        <footer style={styles.footer}>
+          Prism — a University of Michigan student project. For research and
+          educational purposes only; not investment advice.
+        </footer>
+      </div>
 
-        {/* 2-column grid: signals + sidebar */}
-        <div style={styles.grid}>
-          {/* Left — signals */}
-          <div style={styles.left}>
-            <SignalCards ticker={ticker} />
-            <ChatPanel ticker={ticker} />
-          </div>
-
-          {/* Right — alerts + brief */}
-          <div style={styles.right}>
-            <AlertsSection ticker={ticker} />
-            <ResearchBrief ticker={ticker} />
-          </div>
-        </div>
-      </main>
-
-      <footer style={styles.footer}>
-        <span>Prism · University of Michigan · {new Date().getFullYear()}</span>
-        <span>Built with Claude API</span>
-      </footer>
+      <ChatLauncher ticker={ticker} />
     </div>
   );
 }
 
 const styles = {
-  root: {
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
+  page: { minHeight: "100vh" },
+  column: {
+    maxWidth: "860px",
+    margin: "0 auto",
+    padding: "0 32px 80px",
   },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0 28px",
-    height: "58px",
-    background: "var(--surface)",
-    borderBottom: "1px solid var(--border)",
-    position: "sticky",
-    top: 0,
-    zIndex: 100,
-  },
-  logo: {
+  hero: { marginTop: "64px" },
+  nameRow: {
     display: "flex",
     alignItems: "baseline",
-    gap: "8px",
+    gap: "14px",
   },
-  logoMark: {
-    color: "var(--teal)",
-    fontSize: "1.3rem",
-    lineHeight: 1,
+  name: {
+    fontFamily: "var(--serif)",
+    fontSize: "38px",
+    fontWeight: 400,
+    letterSpacing: "-0.02em",
+    color: "var(--ink)",
+    lineHeight: 1.1,
   },
-  logoText: {
-    fontWeight: 700,
-    fontSize: "1.15rem",
-    color: "var(--text)",
-    letterSpacing: "-0.01em",
+  ticker: {
+    fontSize: "12px",
+    letterSpacing: "0.08em",
+    color: "var(--faint)",
   },
-  logoSub: {
-    fontSize: "0.72rem",
-    color: "var(--text-muted)",
-    fontWeight: 500,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
+  read: {
+    fontFamily: "var(--serif)",
+    fontSize: "21px",
+    fontStyle: "italic",
+    fontWeight: 400,
+    lineHeight: 1.5,
+    color: "var(--muted)",
+    marginTop: "20px",
+    maxWidth: "620px",
   },
-  main: {
-    flex: 1,
-    maxWidth: "1200px",
-    width: "100%",
-    margin: "0 auto",
-    padding: "28px 24px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-  },
-  titleRow: {
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-  },
-  pageTitle: {
-    fontSize: "1.5rem",
-    fontWeight: 700,
-    color: "var(--text)",
-    lineHeight: 1.2,
-  },
-  pageTicker: {
-    color: "var(--teal)",
-    fontWeight: 600,
-  },
-  pageSubtitle: {
-    fontSize: "0.82rem",
-    color: "var(--text-muted)",
-    marginTop: "4px",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 380px",
-    gap: "20px",
-    alignItems: "start",
-  },
-  left: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-  },
-  right: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-    position: "sticky",
-    top: "78px",
-  },
+  briefWrap: { marginTop: "64px" },
   footer: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "14px 28px",
-    borderTop: "1px solid var(--border)",
-    fontSize: "0.75rem",
-    color: "var(--text-muted)",
+    marginTop: "96px",
+    paddingTop: "22px",
+    borderTop: "0.5px solid var(--hairline)",
+    fontSize: "11.5px",
+    color: "var(--faint)",
+    lineHeight: 1.5,
   },
 };
