@@ -36,6 +36,10 @@ class SentimentScraper(BaseScraper):
 
     # ------------------------------------------------------------------ Reddit
     def _fetch_reddit(self) -> list[RawEvent]:
+        # PENDING: Reddit credentials not provisioned yet — skip entirely.
+        if not settings.reddit_enabled:
+            log.info("reddit scraping is pending (reddit_enabled=false); skipping")
+            return []
         if not (settings.reddit_client_id and settings.reddit_client_secret):
             return []
         try:

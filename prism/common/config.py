@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     user_agent: str = Field(default="PrismBot/0.1 (+https://example.com/prism)")
 
     # --- Reddit ---------------------------------------------------------
+    # PENDING: Reddit API credentials are not available yet. While disabled the
+    # sentiment scraper skips Reddit entirely (StockTwits still runs). Flip to
+    # true once REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET are provisioned.
+    reddit_enabled: bool = Field(default=False)
     reddit_client_id: str | None = None
     reddit_client_secret: str | None = None
     reddit_user_agent: str | None = None

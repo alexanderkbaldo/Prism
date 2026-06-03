@@ -13,9 +13,10 @@ x-app-env: &app-env
   REDIS_URL: redis://redis:6379/0
   DATABASE_URL: postgresql://prism:prism@postgres:5432/prism
   ALLOW_SAMPLE_DATA: "true"
-  # AI keys pass through from the host / .env (blank = features disabled).
+  # Keys pass through from the host / .env (blank = that feature is disabled).
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  SERPAPI_KEY: ${SERPAPI_KEY:-}
   CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-6}
 
 services:

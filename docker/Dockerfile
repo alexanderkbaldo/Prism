@@ -16,5 +16,10 @@ COPY pyproject.toml ./
 COPY prism ./prism
 RUN pip install -e .
 
+# SQL schema/migrations — read at runtime by `python -m prism.common.migrate`
+# (which resolves /app/sql/init.sql). Copied after the install so schema edits
+# don't bust the dependency layer cache.
+COPY sql ./sql
+
 # Default command; overridden per-service in docker-compose.yml.
 CMD ["python", "-m", "prism.normaliser.worker"]
