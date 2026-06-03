@@ -4,7 +4,7 @@ import StatRow from "../components/StatRow";
 import AnomalyLine from "../components/AnomalyLine";
 import Brief from "../components/Brief";
 import Footer from "../components/Footer";
-import { useBrief } from "../hooks/useApi";
+import { useBrief, useSignals } from "../hooks/useApi";
 
 const COMPANY_NAMES = {
   HOOD: "Robinhood",
@@ -42,6 +42,32 @@ function Hero({ ticker }) {
   );
 }
 
+// "Last updated" — reflects data freshness via the most recent signal timestamp.
+function LastUpdated({ ticker }) {
+  const { data } = useSignals(ticker);
+  const signals = data?.signals ?? [];
+  if (signals.length === 0) return null;
+
+  const latestMs = signals.reduce((max, s) => {
+    const t = new Date(s.event_timestamp).getTime();
+    return Number.isNaN(t) ? max : Math.max(max, t);
+  }, 0);
+  if (!latestMs) return null;
+
+  const when = new Date(latestMs).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  return (
+    <div style={styles.metaRow}>
+      <span style={styles.updated}>Last updated · {when}</span>
+    </div>
+  );
+}
+
 export default function Dashboard({ ticker, onTickerChange }) {
   return (
     <div style={styles.column}>
@@ -51,6 +77,7 @@ export default function Dashboard({ ticker, onTickerChange }) {
       </div>
 
       <Hero ticker={ticker} />
+      <LastUpdated ticker={ticker} />
       <StatRow ticker={ticker} />
       <AnomalyLine ticker={ticker} />
       <div style={styles.briefWrap}>
@@ -75,6 +102,13 @@ const styles = {
     paddingTop: "32px",
   },
   hero: { marginTop: "48px" },
+  metaRow: { marginTop: "18px" },
+  updated: {
+    fontSize: "11px",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "var(--faint)",
+  },
   nameRow: { display: "flex", alignItems: "baseline", gap: "14px" },
   name: {
     fontFamily: "var(--serif)",

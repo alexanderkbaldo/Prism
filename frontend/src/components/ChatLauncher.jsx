@@ -11,6 +11,7 @@ export default function ChatLauncher({ ticker }) {
   const [messages, setMessages] = useState([]); // {role, text}
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -125,17 +126,23 @@ export default function ChatLauncher({ ticker }) {
         </div>
       )}
 
-      <button
-        onClick={() => setOpen((o) => !o)}
-        style={styles.launcher}
-        aria-label={open ? "Close chat" : "Open chat"}
-      >
-        {open ? (
-          <span style={styles.launcherX}>×</span>
-        ) : (
-          <span style={styles.launcherDot} />
-        )}
-      </button>
+      <div style={styles.launchWrap}>
+        {!open && hovered && <span style={styles.tooltip}>Ask Prism AI</span>}
+        <button
+          onClick={() => setOpen((o) => !o)}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          style={styles.launcher}
+          title="Ask Prism AI"
+          aria-label={open ? "Close chat" : "Ask Prism AI"}
+        >
+          {open ? (
+            <span style={styles.launcherX}>×</span>
+          ) : (
+            <span style={styles.launcherDot} />
+          )}
+        </button>
+      </div>
     </div>
   );
 }
@@ -150,6 +157,28 @@ const styles = {
     flexDirection: "column",
     alignItems: "flex-end",
     gap: "14px",
+  },
+  launchWrap: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+  tooltip: {
+    position: "absolute",
+    right: "100%",
+    marginRight: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    whiteSpace: "nowrap",
+    background: "var(--ink)",
+    color: "var(--bg)",
+    padding: "6px 11px",
+    borderRadius: "8px",
+    fontSize: "12px",
+    fontWeight: 500,
+    letterSpacing: "0.01em",
+    boxShadow: "0 4px 14px rgba(26,32,24,0.20)",
+    pointerEvents: "none",
   },
   launcher: {
     width: "52px",

@@ -25,6 +25,13 @@ function summarise(signals) {
   return out;
 }
 
+// Map an average sentiment in [-1, 1] onto a 0-100 score for display.
+function score100(bucket) {
+  if (bucket.sentN === 0) return null;
+  const avg = bucket.sentSum / bucket.sentN;
+  return Math.round(((avg + 1) / 2) * 100);
+}
+
 function Delta({ stat, bucket }) {
   if (stat.showScore && bucket.sentN > 0) {
     const avg = bucket.sentSum / bucket.sentN;
@@ -47,6 +54,7 @@ export default function StatRow({ ticker }) {
     <div style={styles.row}>
       {STATS.map((stat, i) => {
         const b = buckets[stat.key];
+        const score = stat.showScore ? score100(b) : null;
         return (
           <div
             key={stat.key}
@@ -58,6 +66,12 @@ export default function StatRow({ ticker }) {
             <span className="eyebrow" style={styles.label}>{stat.label}</span>
             <span style={styles.number}>{loading && !data ? "—" : b.count}</span>
             <Delta stat={stat} bucket={b} />
+            {/* 0-100 scale label under each signal score */}
+            {score != null && (
+              <span style={styles.scale}>
+                {score}<span style={styles.scaleDenom}> / 100</span>
+              </span>
+            )}
           </div>
         );
       })}
@@ -93,5 +107,16 @@ const styles = {
     fontSize: "11px",
     color: "var(--muted)",
     letterSpacing: "0.01em",
+  },
+  scale: {
+    fontSize: "11px",
+    fontWeight: 500,
+    color: "var(--ink)",
+    letterSpacing: "0.01em",
+    marginTop: "-3px",
+  },
+  scaleDenom: {
+    fontWeight: 400,
+    color: "var(--faint)",
   },
 };

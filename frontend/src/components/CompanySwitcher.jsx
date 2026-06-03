@@ -1,11 +1,17 @@
 import React from "react";
 
-const TICKERS = ["HOOD", "AFRM", "XYZ", "KLAR", "CHYM"];
+const COMPANIES = [
+  ["HOOD", "Robinhood"],
+  ["AFRM", "Affirm"],
+  ["XYZ", "Block"],
+  ["KLAR", "Klarna"],
+  ["CHYM", "Chime"],
+];
 
 export default function CompanySwitcher({ ticker, onChange }) {
   return (
     <nav style={styles.tabs}>
-      {TICKERS.map((t) => {
+      {COMPANIES.map(([t, name]) => {
         const active = t === ticker;
         return (
           <button
@@ -13,7 +19,16 @@ export default function CompanySwitcher({ ticker, onChange }) {
             onClick={() => onChange(t)}
             style={{ ...styles.tab, ...(active ? styles.tabActive : {}) }}
           >
-            {t}
+            <span
+              style={{ ...styles.ticker, ...(active ? styles.tickerActive : {}) }}
+            >
+              {t}
+            </span>
+            <span
+              style={{ ...styles.name, ...(active ? styles.nameActive : {}) }}
+            >
+              {name}
+            </span>
           </button>
         );
       })}
@@ -24,18 +39,32 @@ export default function CompanySwitcher({ ticker, onChange }) {
 const styles = {
   tabs: { display: "flex", gap: "4px" },
   tab: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "2px",
     background: "transparent",
     border: "none",
     cursor: "pointer",
-    fontSize: "12px",
-    letterSpacing: "0.04em",
-    color: "var(--muted)",
-    padding: "5px 11px",
-    borderRadius: "5px",
+    padding: "6px 12px",
+    borderRadius: "7px",
     transition: "color 0.15s, background 0.15s",
   },
   tabActive: {
     background: "var(--ink)",
-    color: "var(--bg)",
   },
+  ticker: {
+    fontSize: "12px",
+    fontWeight: 500,
+    letterSpacing: "0.04em",
+    color: "var(--muted)",
+  },
+  name: {
+    fontSize: "10px",
+    letterSpacing: "0.01em",
+    color: "var(--faint)",
+  },
+  // When active, the tab background is --ink, so flip text to light surfaces.
+  tickerActive: { color: "var(--bg)" },
+  nameActive: { color: "var(--sage-soft)" },
 };
