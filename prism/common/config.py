@@ -130,6 +130,18 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_allow_origins.split(",") if o.strip()]
 
+    # --- Email alerts (Resend) -----------------------------------------
+    # A scheduled digest emails new anomaly alerts. No-op unless both a Resend
+    # API key and a recipient are configured. `alert_email_from` must be a
+    # verified Resend sender (onboarding@resend.dev works for testing, but only
+    # delivers to your own Resend account email).
+    resend_api_key: str | None = None
+    alert_email_to: str | None = None
+    alert_email_from: str = Field(default="Prism Alerts <onboarding@resend.dev>")
+    # Base URL used to build the dashboard link inside the email.
+    dashboard_url: str = Field(default="http://localhost:5173")
+    alert_digest_max: int = Field(default=50)
+
 
 @lru_cache
 def get_settings() -> Settings:

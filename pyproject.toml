@@ -34,6 +34,7 @@ prism-flows = "prism.flows.dag:main"
 prism-api = "prism.api.main:serve"
 prism-brief = "prism.ai.synthesis:main"
 prism-scorer = "prism.ai.scorer:main"
+prism-digest = "prism.notify.digest:main"
 prism-migrate = "prism.common.migrate:main"
 
 [build-system]

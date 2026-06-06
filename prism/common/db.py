@@ -334,6 +334,33 @@ def daily_series(company: str, days: int) -> list[dict]:
         return cur.fetchall()
 
 
+def unnotified_alerts(limit: int) -> list[dict]:
+    """Alerts that haven't been included in an emailed digest yet, newest first."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, company, ticker, category, metric, value, deviation,
+                   direction, summary_text, created_at
+            FROM alerts
+            WHERE notified_at IS NULL
+            ORDER BY created_at DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        return cur.fetchall()
+
+
+def mark_alerts_notified(alert_ids: list[int]) -> None:
+    if not alert_ids:
+        return
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE alerts SET notified_at = now() WHERE id = ANY(%s)",
+            (alert_ids,),
+        )
+
+
 def weekly_aggregates(company: str) -> list[dict]:
     """This-week vs last-week aggregates per category for correlation analysis."""
     with get_cursor() as cur:

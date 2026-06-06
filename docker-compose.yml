@@ -18,6 +18,10 @@ x-app-env: &app-env
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
   SERPAPI_KEY: ${SERPAPI_KEY:-}
   CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-6}
+  RESEND_API_KEY: ${RESEND_API_KEY:-}
+  ALERT_EMAIL_TO: ${ALERT_EMAIL_TO:-}
+  ALERT_EMAIL_FROM: ${ALERT_EMAIL_FROM:-Prism Alerts <onboarding@resend.dev>}
+  DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:5173}
 
 services:
   postgres:

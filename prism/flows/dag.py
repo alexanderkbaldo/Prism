@@ -87,6 +87,16 @@ def daily_brief_flow() -> dict[str, int | None]:
     return results
 
 
+@flow(name="prism-alert-digest", log_prints=True)
+def alert_digest_flow() -> int:
+    """Email new anomaly alerts as a batched digest (no-op unless configured)."""
+    from prism.notify.digest import send_digest
+
+    sent = send_digest()
+    get_run_logger().info("alert digest: emailed %d alert(s)", sent)
+    return sent
+
+
 # (flow object, daily cron) — staggered across the early-UTC hours; the brief
 # runs at 07:30, after the last scraper (07:00) so it sees the full day's data.
 _DEPLOYMENTS = [
@@ -96,6 +106,8 @@ _DEPLOYMENTS = [
     (app_reviews_flow, "45 6 * * *"),
     (sec_edgar_flow, "0 7 * * *"),
     (daily_brief_flow, "30 7 * * *"),
+    # Anomaly digest emails, batched a few times a day.
+    (alert_digest_flow, "0 */6 * * *"),
 ]
 
 
@@ -116,6 +128,8 @@ def main() -> None:
             print(ingest_all())
         elif name == "brief":
             print(daily_brief_flow())
+        elif name == "digest":
+            print(alert_digest_flow())
         else:
             print({name: _run_scraper.fn(name)})
         return

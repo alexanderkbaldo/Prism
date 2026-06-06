@@ -97,6 +97,9 @@ ALTER TABLE signals
     ADD COLUMN IF NOT EXISTS model_scores JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE signals
     ADD COLUMN IF NOT EXISTS summary_text TEXT;
+-- When the alert was included in an emailed digest (NULL = not yet sent).
+ALTER TABLE alerts
+    ADD COLUMN IF NOT EXISTS notified_at TIMESTAMPTZ;
 
 -- Convenience view: daily per-company sentiment + volume rollup.
 CREATE OR REPLACE VIEW daily_company_signals AS
