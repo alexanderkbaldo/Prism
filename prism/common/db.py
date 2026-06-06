@@ -332,3 +332,38 @@ def daily_series(company: str, days: int) -> list[dict]:
             {"company": company, "days": days},
         )
         return cur.fetchall()
+
+
+def weekly_aggregates(company: str) -> list[dict]:
+    """This-week vs last-week aggregates per category for correlation analysis."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+              category,
+              avg(sentiment) FILTER (
+                WHERE event_timestamp >= now() - interval '7 days') AS sent_this,
+              avg(sentiment) FILTER (
+                WHERE event_timestamp >= now() - interval '14 days'
+                  AND event_timestamp <  now() - interval '7 days') AS sent_last,
+              count(*) FILTER (
+                WHERE event_timestamp >= now() - interval '7 days') AS cnt_this,
+              count(*) FILTER (
+                WHERE event_timestamp >= now() - interval '14 days'
+                  AND event_timestamp <  now() - interval '7 days') AS cnt_last,
+              avg((metrics->>'interest')::float) FILTER (
+                WHERE event_timestamp >= now() - interval '7 days'
+                  AND metrics ? 'interest') AS int_this,
+              avg((metrics->>'interest')::float) FILTER (
+                WHERE event_timestamp >= now() - interval '14 days'
+                  AND event_timestamp <  now() - interval '7 days'
+                  AND metrics ? 'interest') AS int_last
+            FROM signals
+            WHERE (upper(ticker) = upper(%(company)s)
+                   OR lower(company) = lower(%(company)s))
+              AND event_timestamp >= now() - interval '14 days'
+            GROUP BY category
+            """,
+            {"company": company},
+        )
+        return cur.fetchall()

@@ -149,6 +149,32 @@ def get_series(
                 "series": _mock_series(days)}
 
 
+@app.get("/correlation", dependencies=PROTECTED)
+def get_correlation(
+    company: str = Query(..., description="Ticker (HOOD) or name (Robinhood)"),
+) -> dict[str, Any]:
+    """Detect signals moving the same direction this week → a combined insight."""
+    try:
+        from prism.api.correlation import compute
+        from prism.common.db import weekly_aggregates
+
+        result = compute(weekly_aggregates(company))
+        return {"source": "db", "company": company, **result}
+    except Exception:  # noqa: BLE001 - DB not up; serve a mock insight
+        log.exception("correlation query failed; returning mock data")
+        return {"source": "mock", "company": company,
+                "signals": [
+                    {"category": "sentiment", "label": "Sentiment",
+                     "direction": "bullish", "detail": "avg +0.30 this week"},
+                    {"category": "hiring", "label": "Hiring",
+                     "direction": "bullish", "detail": "+20% postings vs last week"},
+                    {"category": "trends", "label": "Search interest",
+                     "direction": "bullish", "detail": "+18% search vs last week"},
+                ],
+                "aligned": {"direction": "bullish", "count": 3},
+                "insight": "3 signals aligned bullish this week"}
+
+
 class ChatRequest(BaseModel):
     question: str
     company: str  # ticker (HOOD) or canonical name (Robinhood)

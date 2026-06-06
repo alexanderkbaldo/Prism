@@ -2,6 +2,7 @@ import React from "react";
 import CompanySwitcher from "../components/CompanySwitcher";
 import StatRow from "../components/StatRow";
 import HistoricalCharts from "../components/HistoricalCharts";
+import SignalCorrelation from "../components/SignalCorrelation";
 import AnomalyLine from "../components/AnomalyLine";
 import Brief from "../components/Brief";
 import Footer from "../components/Footer";
@@ -81,6 +82,7 @@ export default function Dashboard({ ticker, onTickerChange }) {
       <LastUpdated ticker={ticker} />
       <StatRow ticker={ticker} />
       <HistoricalCharts ticker={ticker} />
+      <SignalCorrelation ticker={ticker} />
       <AnomalyLine ticker={ticker} />
       <div style={styles.briefWrap}>
         <Brief ticker={ticker} />

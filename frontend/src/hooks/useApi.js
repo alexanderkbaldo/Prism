@@ -76,3 +76,20 @@ export function useSeries(ticker, days = 30) {
 
   return { data, loading, error };
 }
+
+export function useCorrelation(ticker) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!ticker) return;
+    setLoading(true);
+    apiFetch(`/correlation?company=${ticker}`)
+      .then(setData)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [ticker]);
+
+  return { data, loading, error };
+}
