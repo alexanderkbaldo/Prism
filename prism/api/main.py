@@ -35,14 +35,11 @@ app = FastAPI(
     description="Alternative-data signals for fintech equity research.",
 )
 
-# Allow the Vite dev frontend to call the API from the browser. Add the deployed
-# frontend origin(s) here when the dashboard ships to a real URL.
+# Allow the configured browser origins to call the API. Defaults to the local
+# Vite dev server; set CORS_ALLOW_ORIGINS to the deployed frontend URL in prod.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

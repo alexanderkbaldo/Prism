@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { apiUrl } from "../api";
 
 const SUGGESTIONS = [
   "What's the overall read?",
@@ -26,7 +27,7 @@ export default function ChatLauncher({ ticker }) {
     setStreaming(true);
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(apiUrl("/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q, company: ticker }),

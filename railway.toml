@@ -1,0 +1,21 @@
+# Railway deployment config for the Prism API (the web service).
+#
+# Railway injects $PORT and, via its Postgres/Redis plugins, DATABASE_URL and
+# REDIS_URL — which prism.common.config reads directly. Set the remaining
+# secrets (ANTHROPIC_API_KEY, OPENAI_API_KEY, SERPAPI_KEY, RESEND_API_KEY,
+# PRISM_API_KEY, CORS_ALLOW_ORIGINS, ...) as service variables in the dashboard.
+#
+# The start command applies the idempotent schema, then serves the API. The
+# background workers (normaliser, scorer, prefect-worker) are deployed as
+# separate Railway services using the same image with their own start commands —
+# see DEPLOY.md.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "docker/Dockerfile"
+
+[deploy]
+startCommand = "python -m prism.common.migrate && uvicorn prism.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+healthcheckPath = "/healthz"

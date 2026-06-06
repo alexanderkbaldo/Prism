@@ -119,6 +119,16 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = Field(default=60)
     # Stricter limit for the LLM-backed /chat endpoint (spends Claude credits).
     chat_rate_limit_per_minute: int = Field(default=10)
+    # Browser origins allowed to call the API (CORS), comma-separated. Defaults to
+    # the local Vite dev server; in production set this to the deployed frontend
+    # URL, e.g. CORS_ALLOW_ORIGINS=https://prism.vercel.app
+    cors_allow_origins: str = Field(
+        default="http://localhost:5173,http://127.0.0.1:5173"
+    )
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_allow_origins.split(",") if o.strip()]
 
 
 @lru_cache

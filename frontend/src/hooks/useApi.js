@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-
-const BASE = "/api";
+import { apiUrl } from "../api";
 
 async function apiFetch(path) {
-  const res = await fetch(`${BASE}${path}`);
+  const res = await fetch(apiUrl(path));
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
