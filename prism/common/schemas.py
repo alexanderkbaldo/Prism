@@ -80,6 +80,10 @@ class Signal(BaseModel):
     # Plain-English description of the signal, built at normalisation time and
     # safe to pass straight to the Claude API in Phase 2 (no further shaping).
     summary_text: str | None = None
+    # Source-based relevance/quality weight (1.0 = baseline). Higher = more
+    # reliable (verified StockTwits, licensed hiring data, SEC filings); lower =
+    # generic (Reddit). Factored into brief generation.
+    weight: float = 1.0
     metrics: dict[str, Any] = Field(default_factory=dict)
     dedup_hash: str = ""
     created_at: datetime = Field(default_factory=utcnow)

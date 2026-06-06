@@ -99,6 +99,7 @@ class SentimentScraper(BaseScraper):
                     continue
                 for msg in resp.json().get("messages", []):
                     sentiment = (msg.get("entities", {}) or {}).get("sentiment") or {}
+                    user = msg.get("user", {}) or {}
                     out.append(
                         RawEvent(
                             source="stocktwits",
@@ -107,9 +108,14 @@ class SentimentScraper(BaseScraper):
                             title=None,
                             body=msg.get("body"),
                             url=f"https://stocktwits.com/message/{msg['id']}",
-                            author=(msg.get("user", {}) or {}).get("username"),
+                            author=user.get("username"),
                             raw_timestamp=msg.get("created_at"),
-                            metrics={"basic_sentiment": sentiment.get("basic")},
+                            metrics={
+                                "basic_sentiment": sentiment.get("basic"),
+                                # Credibility signals for relevance weighting.
+                                "official": user.get("official"),
+                                "followers": user.get("followers"),
+                            },
                             payload={"symbol": company.ticker},
                         )
                     )

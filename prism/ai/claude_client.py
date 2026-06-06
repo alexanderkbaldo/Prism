@@ -73,6 +73,10 @@ Any SEC filings (10-K, 10-Q, 8-K, S-1, etc.) and their likely significance.
 
 Rules:
 - Ground every claim in the provided signals; never invent data.
+- Each signal carries a `[weight=N]` relevance score (1.0 = baseline). Give more \
+credence to higher-weighted signals (verified StockTwits accounts, licensed \
+hiring data, SEC filings) than to lower-weighted, generic ones (e.g. Reddit). \
+When signals conflict, lead with the higher-weighted read.
 - If a section has no signals, write "No signals in the last 24 hours." — do \
 not speculate.
 - Be concise: 1-3 sentences per section. Lead with the takeaway.
@@ -102,8 +106,10 @@ def _format_signals(signals: list[dict[str, Any]]) -> str:
         summary = sig.get("summary_text") or sig.get("title") or ""
         sentiment = sig.get("sentiment")
         sent_str = f" [sentiment={sentiment:+.2f}]" if sentiment is not None else ""
+        weight = sig.get("weight")
+        weight_str = f" [weight={weight:.1f}]" if weight is not None else ""
         lines.append(f"- ({sig.get('category')}/{sig.get('source')}) "
-                     f"{ts_str}{sent_str}: {summary}")
+                     f"{ts_str}{sent_str}{weight_str}: {summary}")
     return "\n".join(lines)
 
 

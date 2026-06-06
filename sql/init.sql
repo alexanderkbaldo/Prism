@@ -37,6 +37,8 @@ CREATE TABLE IF NOT EXISTS signals (
     event_timestamp TIMESTAMPTZ NOT NULL,      -- always UTC
     -- Plain-English, Claude-ready description of the signal (Phase 2 input).
     summary_text    TEXT,
+    -- Source-based relevance/quality weight (1.0 = baseline).
+    weight          DOUBLE PRECISION NOT NULL DEFAULT 1.0,
     -- Secondary AI scores per signal: {"claude": {...}, "gpt4o": {...},
     -- "divergence": {...}}. Populated asynchronously by the normaliser.
     model_scores    JSONB       NOT NULL DEFAULT '{}'::jsonb,
@@ -97,6 +99,8 @@ ALTER TABLE signals
     ADD COLUMN IF NOT EXISTS model_scores JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE signals
     ADD COLUMN IF NOT EXISTS summary_text TEXT;
+ALTER TABLE signals
+    ADD COLUMN IF NOT EXISTS weight DOUBLE PRECISION NOT NULL DEFAULT 1.0;
 -- When the alert was included in an emailed digest (NULL = not yet sent).
 ALTER TABLE alerts
     ADD COLUMN IF NOT EXISTS notified_at TIMESTAMPTZ;

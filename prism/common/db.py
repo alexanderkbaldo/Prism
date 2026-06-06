@@ -87,10 +87,10 @@ def insert_signal(signal: Signal) -> int | None:
             """
             INSERT INTO signals
                 (raw_event_id, source, category, company, ticker, title, body,
-                 sentiment, url, event_timestamp, summary_text, metrics,
+                 sentiment, url, event_timestamp, summary_text, weight, metrics,
                  dedup_hash, created_at)
             VALUES
-                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (dedup_hash) DO NOTHING
             RETURNING id
             """,
@@ -106,6 +106,7 @@ def insert_signal(signal: Signal) -> int | None:
                 signal.url,
                 signal.event_timestamp,
                 signal.summary_text,
+                signal.weight,
                 json.dumps(signal.metrics),
                 signal.dedup_hash,
                 signal.created_at,
@@ -177,7 +178,8 @@ def query_signals(
         cur.execute(
             f"""
             SELECT id, source, category, company, ticker, title, sentiment,
-                   url, event_timestamp, summary_text, model_scores, metrics
+                   url, event_timestamp, summary_text, weight, model_scores,
+                   metrics
             FROM signals
             WHERE {where}
             ORDER BY event_timestamp DESC
@@ -254,12 +256,12 @@ def recent_signals_for_company(company: str, hours: int, limit: int) -> list[dic
         cur.execute(
             """
             SELECT id, source, category, company, ticker, title, sentiment,
-                   url, event_timestamp, summary_text, metrics
+                   url, event_timestamp, summary_text, weight, metrics
             FROM signals
             WHERE (upper(ticker) = upper(%(company)s)
                    OR lower(company) = lower(%(company)s))
               AND event_timestamp >= now() - (%(hours)s * interval '1 hour')
-            ORDER BY event_timestamp DESC
+            ORDER BY weight DESC, event_timestamp DESC
             LIMIT %(limit)s
             """,
             {"company": company, "hours": hours, "limit": limit},

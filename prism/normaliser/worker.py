@@ -35,6 +35,7 @@ from prism.normaliser import anomaly, dedup
 from prism.normaliser.sentiment import score
 from prism.normaliser.summaries import build as build_summary
 from prism.normaliser.timestamps import to_utc
+from prism.normaliser.weighting import weight_for
 
 log = logging.getLogger(__name__)
 
@@ -87,6 +88,7 @@ class Normaliser:
                 url=event.url,
                 event_timestamp=to_utc(event.raw_timestamp),
                 summary_text=build_summary(event, company, sentiment),
+                weight=weight_for(event),
                 metrics=event.metrics,
             )
             sig.dedup_hash = sig.compute_dedup_hash()
