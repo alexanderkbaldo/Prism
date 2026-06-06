@@ -125,6 +125,30 @@ def get_brief(
         return {"source": "mock", "brief": _mock_brief(company)}
 
 
+@app.get("/series", dependencies=PROTECTED)
+def get_series(
+    company: str = Query(..., description="Ticker (HOOD) or name (Robinhood)"),
+    days: int = Query(30, ge=1, le=365, description="Trailing window in days"),
+) -> dict[str, Any]:
+    """Daily per-category aggregates for the dashboard's historical charts.
+
+    Each point carries `count`, `avg_sentiment`, and `avg_interest`; the chart
+    for each signal plots the field that fits it.
+    """
+    try:
+        from prism.common.db import daily_series
+
+        rows = daily_series(company, days)
+        series: dict[str, list] = {}
+        for r in rows:
+            series.setdefault(r["category"], []).append(_serialise(r))
+        return {"source": "db", "company": company, "days": days, "series": series}
+    except Exception:  # noqa: BLE001 - DB not up; serve mock so charts render
+        log.exception("series query failed; returning mock data")
+        return {"source": "mock", "company": company, "days": days,
+                "series": _mock_series(days)}
+
+
 class ChatRequest(BaseModel):
     question: str
     company: str  # ticker (HOOD) or canonical name (Robinhood)
@@ -206,6 +230,28 @@ def _mock_brief(company: str) -> dict:
             "(mock data — Postgres not reachable)"
         ),
     }
+
+
+def _mock_series(days: int) -> dict[str, list]:
+    """Deterministic sample time series so the charts render without Postgres."""
+    import math
+
+    today = datetime.now(timezone.utc).date()
+    n = min(days, 14)
+    out: dict[str, list] = {}
+    for idx, cat in enumerate(["sentiment", "hiring", "trends", "reviews"]):
+        points = []
+        for i in range(n):
+            day = (today - timedelta(days=(n - 1 - i))).isoformat()
+            wave = math.sin((i + idx) / 2)
+            points.append({
+                "day": day,
+                "count": 2 + (i + idx) % 5,
+                "avg_sentiment": round(wave * 0.6, 2),
+                "avg_interest": 55 + round(wave * 20),
+            })
+        out[cat] = points
+    return out
 
 
 def serve() -> None:

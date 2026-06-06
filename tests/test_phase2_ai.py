@@ -60,3 +60,14 @@ def test_brief_endpoint_returns_data():
     assert r["source"] in {"db", "mock"}
     assert r["brief"] is not None
     assert "Sentiment Trend" in r["brief"]["brief_text"]
+
+
+def test_series_endpoint_shape():
+    r = client.get("/series", params={"company": "HOOD", "days": 30}).json()
+    assert r["source"] in {"db", "mock"}
+    assert isinstance(r["series"], dict)
+    # Every point carries the fields the charts plot.
+    for points in r["series"].values():
+        for p in points:
+            assert "day" in p
+            assert {"count", "avg_sentiment", "avg_interest"} <= set(p)

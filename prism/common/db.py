@@ -304,3 +304,31 @@ def get_latest_brief(company: str) -> dict | None:
             {"company": company},
         )
         return cur.fetchone()
+
+
+def daily_series(company: str, days: int) -> list[dict]:
+    """Per-category daily aggregates for one company over the trailing window.
+
+    Powers the dashboard's 30-day charts. Each row carries the values a chart
+    might plot: `count` (volume), `avg_sentiment` (sentiment/reviews), and
+    `avg_interest` (Google Trends 0-100). The frontend picks the field per chart.
+    """
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT category,
+                   date_trunc('day', event_timestamp)::date AS day,
+                   count(*) AS count,
+                   avg(sentiment) AS avg_sentiment,
+                   avg((metrics->>'interest')::float)
+                       FILTER (WHERE metrics ? 'interest') AS avg_interest
+            FROM signals
+            WHERE (upper(ticker) = upper(%(company)s)
+                   OR lower(company) = lower(%(company)s))
+              AND event_timestamp >= now() - (%(days)s * interval '1 day')
+            GROUP BY category, day
+            ORDER BY day
+            """,
+            {"company": company, "days": days},
+        )
+        return cur.fetchall()
