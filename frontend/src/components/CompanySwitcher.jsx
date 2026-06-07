@@ -10,7 +10,7 @@ const COMPANIES = [
 
 export default function CompanySwitcher({ ticker, onChange }) {
   return (
-    <nav style={styles.tabs}>
+    <nav className="company-tabs" style={styles.tabs}>
       {COMPANIES.map(([t, name]) => {
         const active = t === ticker;
         return (

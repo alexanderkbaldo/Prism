@@ -63,8 +63,15 @@ function LastUpdated({ ticker }) {
     minute: "2-digit",
   });
 
+  const isMock = data?.source === "mock";
+
   return (
     <div style={styles.metaRow}>
+      {isMock && (
+        <span style={styles.mock} title="The backend is unreachable — showing sample data.">
+          Sample data
+        </span>
+      )}
       <span style={styles.updated}>Last updated · {when}</span>
     </div>
   );
@@ -72,8 +79,8 @@ function LastUpdated({ ticker }) {
 
 export default function Dashboard({ ticker, onTickerChange }) {
   return (
-    <div style={styles.column}>
-      <div style={styles.switchRow}>
+    <div className="page" style={styles.column}>
+      <div className="switch-row" style={styles.switchRow}>
         <span className="eyebrow">Companies</span>
         <CompanySwitcher ticker={ticker} onChange={onTickerChange} />
       </div>
@@ -81,12 +88,14 @@ export default function Dashboard({ ticker, onTickerChange }) {
       <Hero ticker={ticker} />
       <LastUpdated ticker={ticker} />
       <StatRow ticker={ticker} />
-      <HistoricalCharts ticker={ticker} />
-      <SignalCorrelation ticker={ticker} />
-      <AnomalyLine ticker={ticker} />
+      {/* The brief is the headline value, so it sits high — above the deeper
+          historical/correlation/alert detail. */}
       <div style={styles.briefWrap}>
         <Brief ticker={ticker} />
       </div>
+      <HistoricalCharts ticker={ticker} />
+      <SignalCorrelation ticker={ticker} />
+      <AnomalyLine ticker={ticker} />
 
       <Footer />
     </div>
@@ -106,12 +115,27 @@ const styles = {
     paddingTop: "32px",
   },
   hero: { marginTop: "48px" },
-  metaRow: { marginTop: "18px" },
+  metaRow: {
+    marginTop: "18px",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
   updated: {
     fontSize: "11px",
     letterSpacing: "0.06em",
     textTransform: "uppercase",
     color: "var(--faint)",
+  },
+  mock: {
+    fontSize: "10px",
+    fontWeight: 500,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "var(--ink)",
+    background: "var(--sage-soft)",
+    padding: "2px 8px",
+    borderRadius: "99px",
   },
   nameRow: { display: "flex", alignItems: "baseline", gap: "14px" },
   name: {
@@ -133,5 +157,5 @@ const styles = {
     marginTop: "20px",
     maxWidth: "620px",
   },
-  briefWrap: { marginTop: "64px" },
+  briefWrap: { marginTop: "24px" },
 };

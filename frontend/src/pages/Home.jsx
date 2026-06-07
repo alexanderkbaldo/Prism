@@ -19,10 +19,10 @@ const TRACKED = [
 
 export default function Home() {
   return (
-    <div style={styles.column}>
+    <div className="page" style={styles.column}>
       {/* Hero */}
-      <section style={styles.hero}>
-        <h1 style={styles.headline}>
+      <section className="home-hero" style={styles.hero}>
+        <h1 className="home-headline" style={styles.headline}>
           Fintech intelligence before the earnings call.
         </h1>
         <p style={styles.sub}>

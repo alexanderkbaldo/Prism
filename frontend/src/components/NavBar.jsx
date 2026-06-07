@@ -11,7 +11,7 @@ const LINKS = [
 export default function NavBar() {
   return (
     <header style={styles.bar}>
-      <div style={styles.inner}>
+      <div className="nav-inner" style={styles.inner}>
         <Link to="/" style={styles.brand}>
           <Logo />
         </Link>

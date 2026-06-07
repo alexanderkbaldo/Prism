@@ -102,7 +102,7 @@ export default function HistoricalCharts({ ticker }) {
   return (
     <section style={styles.wrap}>
       <span className="eyebrow" style={styles.heading}>Last 30 days</span>
-      <div style={styles.grid}>
+      <div className="chart-grid" style={styles.grid}>
         {CHARTS.map((c) => (
           <MiniChart
             key={c.key}

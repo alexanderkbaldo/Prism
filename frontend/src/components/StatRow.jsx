@@ -25,25 +25,15 @@ function summarise(signals) {
   return out;
 }
 
-// Map an average sentiment in [-1, 1] onto a 0-100 score for display.
-function score100(bucket) {
+// Sentiment score: average sentiment (-1..1) mapped to a labelled 0-100 scale.
+function score(bucket) {
   if (bucket.sentN === 0) return null;
   const avg = bucket.sentSum / bucket.sentN;
-  return Math.round(((avg + 1) / 2) * 100);
-}
-
-function Delta({ stat, bucket }) {
-  if (stat.showScore && bucket.sentN > 0) {
-    const avg = bucket.sentSum / bucket.sentN;
-    const color = avg >= 0.05 ? "var(--up)" : avg <= -0.05 ? "var(--down)" : "var(--faint)";
-    const arrow = avg >= 0.05 ? "↑" : avg <= -0.05 ? "↓" : "·";
-    return (
-      <span style={{ ...styles.delta, color }}>
-        {arrow} {avg >= 0 ? "+" : ""}{avg.toFixed(2)}
-      </span>
-    );
-  }
-  return <span style={styles.delta}>{stat.unit}</span>;
+  return {
+    value: Math.round(((avg + 1) / 2) * 100),
+    color: avg >= 0.05 ? "var(--up)" : avg <= -0.05 ? "var(--down)" : "var(--faint)",
+    arrow: avg >= 0.05 ? "↑" : avg <= -0.05 ? "↓" : "·",
+  };
 }
 
 export default function StatRow({ ticker }) {
@@ -51,25 +41,25 @@ export default function StatRow({ ticker }) {
   const buckets = summarise(data?.signals || []);
 
   return (
-    <div style={styles.row}>
+    <div className="stat-grid" style={styles.row}>
       {STATS.map((stat, i) => {
         const b = buckets[stat.key];
-        const score = stat.showScore ? score100(b) : null;
+        const s = stat.showScore ? score(b) : null;
         return (
           <div
             key={stat.key}
-            style={{
-              ...styles.cell,
-              ...(i > 0 ? styles.cellDivider : {}),
-            }}
+            className="stat-cell"
+            style={{ ...styles.cell, ...(i > 0 ? styles.cellDivider : {}) }}
           >
             <span className="eyebrow" style={styles.label}>{stat.label}</span>
+            {/* The headline number is volume; the caption names its unit. */}
             <span style={styles.number}>{loading && !data ? "—" : b.count}</span>
-            <Delta stat={stat} bucket={b} />
-            {/* 0-100 scale label under each signal score */}
-            {score != null && (
-              <span style={styles.scale}>
-                {score}<span style={styles.scaleDenom}> / 100</span>
+            <span style={styles.unit}>{stat.unit}</span>
+            {/* A single, labelled sentiment score (no second raw scale). */}
+            {s && (
+              <span style={{ ...styles.score, color: s.color }}>
+                <span style={styles.scoreLabel}>sentiment</span>{" "}
+                {s.arrow} {s.value}<span style={styles.scoreDenom}>/100</span>
               </span>
             )}
           </div>
@@ -88,13 +78,11 @@ const styles = {
   cell: {
     display: "flex",
     flexDirection: "column",
-    gap: "9px",
+    gap: "6px",
     padding: "4px 26px",
   },
-  cellDivider: {
-    borderLeft: "0.5px solid var(--hairline)",
-  },
-  label: { color: "var(--faint)" },
+  cellDivider: { borderLeft: "0.5px solid var(--hairline)" },
+  label: { color: "var(--faint)", marginBottom: "3px" },
   number: {
     fontFamily: "var(--serif)",
     fontSize: "33px",
@@ -103,20 +91,19 @@ const styles = {
     color: "var(--ink)",
     letterSpacing: "-0.01em",
   },
-  delta: {
-    fontSize: "11px",
-    color: "var(--muted)",
-    letterSpacing: "0.01em",
-  },
-  scale: {
-    fontSize: "11px",
+  unit: { fontSize: "11px", color: "var(--faint)", letterSpacing: "0.02em" },
+  score: {
+    fontSize: "12px",
     fontWeight: 500,
-    color: "var(--ink)",
+    marginTop: "5px",
     letterSpacing: "0.01em",
-    marginTop: "-3px",
   },
-  scaleDenom: {
+  scoreLabel: {
+    fontSize: "9px",
     fontWeight: 400,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
     color: "var(--faint)",
   },
+  scoreDenom: { fontWeight: 400, color: "var(--faint)" },
 };

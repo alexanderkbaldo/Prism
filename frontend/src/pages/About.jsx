@@ -3,7 +3,7 @@ import Footer from "../components/Footer";
 
 export default function About() {
   return (
-    <div style={styles.column}>
+    <div className="page" style={styles.column}>
       <article style={styles.article}>
         <span className="eyebrow">About</span>
         <h1 style={styles.title}>About Prism</h1>

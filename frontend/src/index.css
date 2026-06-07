@@ -54,3 +54,32 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 99px; }
 
 button { font-family: inherit; }
+
+/* Responsive overrides. Components use inline styles (desktop values), so these
+   use !important to take over on small screens. */
+@media (max-width: 720px) {
+  .page { padding-left: 20px !important; padding-right: 20px !important; }
+  .nav-inner { padding: 14px 20px !important; }
+
+  /* Stat row: 5 columns → 2; dividers only between the two columns. */
+  .stat-grid { grid-template-columns: 1fr 1fr !important; row-gap: 6px !important; }
+  .stat-cell { padding: 14px 14px !important; border-left: none !important; }
+  .stat-cell:nth-child(even) {
+    border-left: 0.5px solid var(--hairline) !important;
+  }
+
+  /* Charts: 2 columns → 1. */
+  .chart-grid { grid-template-columns: 1fr !important; }
+
+  /* Company switcher stacks under its label and wraps. */
+  .switch-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .company-tabs { flex-wrap: wrap !important; }
+
+  /* Home hero: smaller headline, less vertical air. */
+  .home-hero { padding-top: 88px !important; padding-bottom: 72px !important; }
+  .home-headline { font-size: 34px !important; }
+}
