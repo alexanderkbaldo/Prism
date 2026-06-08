@@ -1,13 +1,13 @@
 import React from "react";
 import { useSignals } from "../hooks/useApi";
 
-// Display order + human labels for each signal category.
+// Display order, human labels, and a plain-English description per signal.
 const STATS = [
-  { key: "sentiment", label: "Sentiment", unit: "mentions", showScore: true },
-  { key: "hiring", label: "Hiring", unit: "postings", showScore: false },
-  { key: "trends", label: "Search interest", unit: "readings", showScore: false },
-  { key: "reviews", label: "App reviews", unit: "reviews", showScore: true },
-  { key: "filings", label: "Filings", unit: "filings", showScore: false },
+  { key: "sentiment", label: "Sentiment", desc: "Social mentions scored for tone", showScore: true },
+  { key: "hiring", label: "Hiring", desc: "Open job postings this week", showScore: false },
+  { key: "trends", label: "Search interest", desc: "Google Trends index, 0–100", showScore: false },
+  { key: "reviews", label: "App reviews", desc: "New App Store reviews", showScore: true },
+  { key: "filings", label: "Filings", desc: "New SEC regulatory filings", showScore: false },
 ];
 
 function summarise(signals) {
@@ -52,9 +52,9 @@ export default function StatRow({ ticker }) {
             style={{ ...styles.cell, ...(i > 0 ? styles.cellDivider : {}) }}
           >
             <span className="eyebrow" style={styles.label}>{stat.label}</span>
-            {/* The headline number is volume; the caption names its unit. */}
+            {/* The headline number is volume; the caption explains it. */}
             <span style={styles.number}>{loading && !data ? "—" : b.count}</span>
-            <span style={styles.unit}>{stat.unit}</span>
+            <span style={styles.desc}>{stat.desc}</span>
             {/* A single, labelled sentiment score (no second raw scale). */}
             {s && (
               <span style={{ ...styles.score, color: s.color }}>
@@ -91,7 +91,13 @@ const styles = {
     color: "var(--ink)",
     letterSpacing: "-0.01em",
   },
-  unit: { fontSize: "11px", color: "var(--faint)", letterSpacing: "0.02em" },
+  desc: {
+    fontSize: "11px",
+    color: "var(--muted)",
+    lineHeight: 1.35,
+    letterSpacing: "0.01em",
+    maxWidth: "150px",
+  },
   score: {
     fontSize: "12px",
     fontWeight: 500,

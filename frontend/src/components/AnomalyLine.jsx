@@ -6,35 +6,36 @@ export default function AnomalyLine({ ticker }) {
   const alerts = data?.alerts ?? [];
   const count = alerts.length;
 
+  // Zero anomalies — collapse to a single quiet line, no card.
+  if (count === 0) {
+    return (
+      <p style={styles.quiet}>
+        <span style={{ ...styles.dot, background: "var(--sage)" }} />
+        No anomalies in the last seven days.
+      </p>
+    );
+  }
+
   return (
     <section style={styles.card}>
       <div style={styles.head}>
-        <span className="eyebrow">Anomaly Alerts</span>
-        <span style={{ ...styles.badge, ...(count > 0 ? styles.badgeActive : {}) }}>
-          {count}
-        </span>
+        <span className="eyebrow">Recent anomalies</span>
+        <span style={{ ...styles.badge, ...styles.badgeActive }}>{count}</span>
       </div>
 
-      {count === 0 ? (
-        <p style={styles.empty}>
-          <span style={{ ...styles.dot, background: "var(--sage)" }} />
-          No anomalies in the last seven days.
-        </p>
-      ) : (
-        <ul style={styles.list}>
-          {alerts.slice(0, 4).map((a, i) => (
-            <li key={a.id ?? i} style={styles.item}>
-              <span style={{ ...styles.dot, background: "var(--alert)" }} />
-              <span style={styles.text}>
-                {a.summary_text || a.message || `${a.category} anomaly detected`}
-              </span>
-            </li>
-          ))}
-          {count > 4 && (
-            <li style={styles.more}>+ {count - 4} more in the last seven days</li>
-          )}
-        </ul>
-      )}
+      <ul style={styles.list}>
+        {alerts.slice(0, 4).map((a, i) => (
+          <li key={a.id ?? i} style={styles.item}>
+            <span style={{ ...styles.dot, background: "var(--alert)" }} />
+            <span style={styles.text}>
+              {a.summary_text || a.message || `${a.category} anomaly detected`}
+            </span>
+          </li>
+        ))}
+        {count > 4 && (
+          <li style={styles.more}>+ {count - 4} more in the last seven days</li>
+        )}
+      </ul>
     </section>
   );
 }
@@ -70,7 +71,8 @@ const styles = {
     background: "var(--alert)",
     color: "#fff",
   },
-  empty: {
+  quiet: {
+    marginTop: "30px",
     display: "flex",
     alignItems: "baseline",
     gap: "9px",

@@ -6,7 +6,7 @@ import SignalCorrelation from "../components/SignalCorrelation";
 import AnomalyLine from "../components/AnomalyLine";
 import Brief from "../components/Brief";
 import Footer from "../components/Footer";
-import { useBrief, useSignals } from "../hooks/useApi";
+import { useBrief } from "../hooks/useApi";
 
 const COMPANY_NAMES = {
   HOOD: "Robinhood",
@@ -32,6 +32,7 @@ function extractRead(briefText) {
 function Hero({ ticker }) {
   const { data } = useBrief(ticker);
   const read = extractRead(data?.brief?.brief_text);
+  const isMock = data?.source === "mock";
 
   return (
     <div style={styles.hero}>
@@ -39,40 +40,19 @@ function Hero({ ticker }) {
         <h1 style={styles.name}>{COMPANY_NAMES[ticker]}</h1>
         <span style={styles.ticker}>{ticker}</span>
       </div>
-      {read && <p style={styles.read}>{read}</p>}
-    </div>
-  );
-}
 
-// "Last updated" — reflects data freshness via the most recent signal timestamp.
-function LastUpdated({ ticker }) {
-  const { data } = useSignals(ticker);
-  const signals = data?.signals ?? [];
-  if (signals.length === 0) return null;
-
-  const latestMs = signals.reduce((max, s) => {
-    const t = new Date(s.event_timestamp).getTime();
-    return Number.isNaN(t) ? max : Math.max(max, t);
-  }, 0);
-  if (!latestMs) return null;
-
-  const when = new Date(latestMs).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-
-  const isMock = data?.source === "mock";
-
-  return (
-    <div style={styles.metaRow}>
-      {isMock && (
-        <span style={styles.mock} title="The backend is unreachable — showing sample data.">
-          Sample data
+      <div style={styles.metaRow}>
+        <span style={styles.tracking}>
+          Tracking 5 alternative data signals · updated daily at 6am
         </span>
-      )}
-      <span style={styles.updated}>Last updated · {when}</span>
+        {isMock && (
+          <span style={styles.mock} title="The backend is unreachable — showing sample data.">
+            Sample data
+          </span>
+        )}
+      </div>
+
+      {read && <p style={styles.read}>{read}</p>}
     </div>
   );
 }
@@ -85,17 +65,14 @@ export default function Dashboard({ ticker, onTickerChange }) {
         <CompanySwitcher ticker={ticker} onChange={onTickerChange} />
       </div>
 
+      {/* Reading order, top to bottom: who → the read → the numbers → the
+          brief (the reason you're here) → correlation → anomalies → history. */}
       <Hero ticker={ticker} />
-      <LastUpdated ticker={ticker} />
       <StatRow ticker={ticker} />
-      {/* The brief is the headline value, so it sits high — above the deeper
-          historical/correlation/alert detail. */}
-      <div style={styles.briefWrap}>
-        <Brief ticker={ticker} />
-      </div>
-      <HistoricalCharts ticker={ticker} />
+      <Brief ticker={ticker} />
       <SignalCorrelation ticker={ticker} />
       <AnomalyLine ticker={ticker} />
+      <HistoricalCharts ticker={ticker} />
 
       <Footer />
     </div>
@@ -116,16 +93,15 @@ const styles = {
   },
   hero: { marginTop: "48px" },
   metaRow: {
-    marginTop: "18px",
+    marginTop: "12px",
     display: "flex",
     alignItems: "center",
     gap: "10px",
   },
-  updated: {
-    fontSize: "11px",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    color: "var(--faint)",
+  tracking: {
+    fontSize: "12.5px",
+    color: "var(--muted)",
+    letterSpacing: "0.01em",
   },
   mock: {
     fontSize: "10px",
@@ -157,5 +133,4 @@ const styles = {
     marginTop: "20px",
     maxWidth: "620px",
   },
-  briefWrap: { marginTop: "24px" },
 };

@@ -21,7 +21,7 @@ export default function SignalCorrelation({ ticker }) {
 
   return (
     <section style={styles.card}>
-      <span className="eyebrow" style={styles.eyebrow}>Signal Correlation</span>
+      <span className="eyebrow" style={styles.eyebrow}>Signal correlation</span>
       <p style={{ ...styles.insight, color: headColor }}>{insight}</p>
 
       {signals.length > 0 && (

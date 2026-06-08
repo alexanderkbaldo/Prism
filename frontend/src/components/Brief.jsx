@@ -16,7 +16,7 @@ export default function Brief({ ticker }) {
   return (
     <section style={styles.section}>
       <div style={styles.head}>
-        <span className="eyebrow">The brief</span>
+        <h2 style={styles.heading}>Today's research brief</h2>
         {brief && (
           <span style={styles.meta}>
             {formatDate(brief.generated_at)} · {brief.signal_count} signals
@@ -47,40 +47,47 @@ export default function Brief({ ticker }) {
 }
 
 const styles = {
-  section: { marginTop: "8px" },
+  section: { marginTop: "72px" },
   head: {
     display: "flex",
     alignItems: "baseline",
     justifyContent: "space-between",
-    paddingBottom: "16px",
+    paddingBottom: "18px",
     borderBottom: "0.5px solid var(--hairline)",
-    marginBottom: "26px",
+    marginBottom: "36px",
   },
-  meta: { fontSize: "11px", color: "var(--faint)" },
-  muted: { color: "var(--muted)", fontSize: "15px" },
-  body: { maxWidth: "640px" },
+  heading: {
+    fontFamily: "var(--serif)",
+    fontSize: "26px",
+    fontWeight: 400,
+    letterSpacing: "-0.01em",
+    color: "var(--ink)",
+  },
+  meta: { fontSize: "12px", color: "var(--faint)" },
+  muted: { color: "var(--muted)", fontSize: "16px" },
+  body: { maxWidth: "680px" },
   h2: {
     fontSize: "10px",
     fontWeight: 500,
     letterSpacing: "0.16em",
     textTransform: "uppercase",
     color: "var(--sage)",
-    marginTop: "30px",
-    marginBottom: "9px",
+    marginTop: "38px",
+    marginBottom: "11px",
   },
   p: {
     fontFamily: "var(--serif)",
-    fontSize: "17px",
-    lineHeight: 1.7,
+    fontSize: "19px",
+    lineHeight: 1.78,
     color: "var(--ink)",
-    marginBottom: "14px",
+    marginBottom: "18px",
   },
   strong: { fontWeight: 500, fontStyle: "italic" },
-  ul: { listStyle: "none", padding: 0, marginBottom: "14px" },
+  ul: { listStyle: "none", padding: 0, marginBottom: "18px" },
   li: {
     fontFamily: "var(--serif)",
-    fontSize: "17px",
-    lineHeight: 1.7,
+    fontSize: "19px",
+    lineHeight: 1.78,
     color: "var(--ink)",
     paddingLeft: "18px",
     position: "relative",

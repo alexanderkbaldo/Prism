@@ -38,18 +38,18 @@ function tooltipFormatter(value, _name, { payload }, unit) {
   return [`${v}${unit}`, undefined];
 }
 
-function MiniChart({ title, points, field, domain, unit }) {
-  const data = (points || [])
+// Shape + filter a signal's points; returns [] when nothing plottable.
+function seriesData(points, field) {
+  return (points || [])
     .map((p) => ({ day: fmtDay(p.day), value: p[field] }))
     .filter((p) => p.value != null);
+}
 
+function MiniChart({ title, data, domain, unit }) {
   return (
     <div style={styles.card}>
       <span className="eyebrow" style={styles.title}>{title}</span>
-      {data.length === 0 ? (
-        <div style={styles.empty}>No data in the last 30 days.</div>
-      ) : (
-        <ResponsiveContainer width="100%" height={132}>
+      <ResponsiveContainer width="100%" height={132}>
           <LineChart data={data} margin={{ top: 8, right: 10, bottom: 0, left: -16 }}>
             <CartesianGrid stroke={C.hairline} strokeDasharray="2 3" vertical={false} />
             <XAxis
@@ -88,9 +88,8 @@ function MiniChart({ title, points, field, domain, unit }) {
               dot={data.length <= 3 ? { r: 2.5, fill: C.sage, strokeWidth: 0 } : false}
               activeDot={{ r: 3.5, fill: C.sage, strokeWidth: 0 }}
             />
-          </LineChart>
-        </ResponsiveContainer>
-      )}
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -99,16 +98,23 @@ export default function HistoricalCharts({ ticker }) {
   const { data } = useSeries(ticker, 30);
   const series = data?.series || {};
 
+  // Only render charts that actually have data; hide the whole section if none.
+  const withData = CHARTS.map((c) => ({
+    ...c,
+    data: seriesData(series[c.key], c.field),
+  })).filter((c) => c.data.length > 0);
+
+  if (withData.length === 0) return null;
+
   return (
     <section style={styles.wrap}>
-      <span className="eyebrow" style={styles.heading}>Last 30 days</span>
+      <span className="eyebrow" style={styles.heading}>Signal history — last 30 days</span>
       <div className="chart-grid" style={styles.grid}>
-        {CHARTS.map((c) => (
+        {withData.map((c) => (
           <MiniChart
             key={c.key}
             title={c.title}
-            points={series[c.key]}
-            field={c.field}
+            data={c.data}
             domain={c.domain}
             unit={c.unit}
           />
@@ -134,11 +140,4 @@ const styles = {
     borderRadius: "14px",
   },
   title: { color: "var(--muted)", display: "block", marginBottom: "10px" },
-  empty: {
-    height: "132px",
-    display: "flex",
-    alignItems: "center",
-    fontSize: "13px",
-    color: "var(--faint)",
-  },
 };
