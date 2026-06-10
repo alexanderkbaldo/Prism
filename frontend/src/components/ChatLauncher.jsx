@@ -19,10 +19,19 @@ export default function ChatLauncher({ ticker }) {
     scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
   }, [messages, open]);
 
+  // A conversation is about one company; switching tickers starts a fresh
+  // thread so follow-ups never mix companies' context.
+  useEffect(() => {
+    setMessages([]);
+  }, [ticker]);
+
   async function ask(question) {
     const q = question.trim();
     if (!q || streaming) return;
     setInput("");
+    // Snapshot the completed turns before this one — that's the history the
+    // model needs to resolve follow-ups like "why?".
+    const history = messages.filter((m) => m.text);
     setMessages((m) => [...m, { role: "user", text: q }, { role: "assistant", text: "" }]);
     setStreaming(true);
 
@@ -30,7 +39,7 @@ export default function ChatLauncher({ ticker }) {
       const res = await fetch(apiUrl("/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q, company: ticker }),
+        body: JSON.stringify({ question: q, company: ticker, history }),
       });
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
       const reader = res.body.getReader();

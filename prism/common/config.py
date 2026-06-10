@@ -84,8 +84,10 @@ class Settings(BaseSettings):
     # Per-signal secondary scorers.
     claude_scoring_model: str = Field(default="claude-sonnet-4-6")
     openai_model: str = Field(default="gpt-4o")
-    # Window of signals fed into each daily brief.
-    brief_lookback_hours: int = Field(default=24)
+    # Window of signals fed into each brief. 7 days (rolling) matches the
+    # dashboard's "trailing 7 days" framing and keeps sparse signals (filings,
+    # reviews) present rather than empty on quiet days.
+    brief_lookback_hours: int = Field(default=168)
     brief_max_signals: int = Field(default=120)
     # Multi-model scoring makes two LLM calls per scored signal, so it only
     # fires when keys are present AND this is on.

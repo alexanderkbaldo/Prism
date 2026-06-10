@@ -38,19 +38,25 @@ function tooltipFormatter(value, _name, { payload }, unit) {
   return [`${v}${unit}`, undefined];
 }
 
-// Shape + filter a signal's points; returns [] when nothing plottable.
-function seriesData(points, field) {
-  return (points || [])
+function MiniChart({ title, points, field, domain, unit }) {
+  const data = (points || [])
     .map((p) => ({ day: fmtDay(p.day), value: p[field] }))
     .filter((p) => p.value != null);
-}
 
-function MiniChart({ title, data, domain, unit }) {
+  // A line needs a few points to mean anything; 1-2 points reads as broken, so
+  // show an intentional "building history" state instead of a near-empty chart.
   return (
     <div style={styles.card}>
       <span className="eyebrow" style={styles.title}>{title}</span>
-      <ResponsiveContainer width="100%" height={132}>
-          <LineChart data={data} margin={{ top: 8, right: 10, bottom: 0, left: -16 }}>
+      {data.length < 3 ? (
+        <div style={styles.empty}>
+          {data.length === 0
+            ? "No data in the last 30 days."
+            : `Building history — ${data.length} day${data.length === 1 ? "" : "s"} so far.`}
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={132}>
+          <LineChart data={data} margin={{ top: 8, right: 10, bottom: 0, left: -4 }}>
             <CartesianGrid stroke={C.hairline} strokeDasharray="2 3" vertical={false} />
             <XAxis
               dataKey="day"
@@ -64,7 +70,7 @@ function MiniChart({ title, data, domain, unit }) {
               tick={{ fontSize: 10, fill: C.faint }}
               tickLine={false}
               axisLine={false}
-              width={34}
+              width={44}
             />
             <Tooltip
               cursor={{ stroke: C.hairline }}
@@ -88,8 +94,9 @@ function MiniChart({ title, data, domain, unit }) {
               dot={data.length <= 3 ? { r: 2.5, fill: C.sage, strokeWidth: 0 } : false}
               activeDot={{ r: 3.5, fill: C.sage, strokeWidth: 0 }}
             />
-        </LineChart>
-      </ResponsiveContainer>
+          </LineChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }
@@ -98,23 +105,16 @@ export default function HistoricalCharts({ ticker }) {
   const { data } = useSeries(ticker, 30);
   const series = data?.series || {};
 
-  // Only render charts that actually have data; hide the whole section if none.
-  const withData = CHARTS.map((c) => ({
-    ...c,
-    data: seriesData(series[c.key], c.field),
-  })).filter((c) => c.data.length > 0);
-
-  if (withData.length === 0) return null;
-
   return (
     <section style={styles.wrap}>
-      <span className="eyebrow" style={styles.heading}>Signal history — last 30 days</span>
+      <span className="eyebrow" style={styles.heading}>Last 30 days</span>
       <div className="chart-grid" style={styles.grid}>
-        {withData.map((c) => (
+        {CHARTS.map((c) => (
           <MiniChart
             key={c.key}
             title={c.title}
-            data={c.data}
+            points={series[c.key]}
+            field={c.field}
             domain={c.domain}
             unit={c.unit}
           />
@@ -140,4 +140,11 @@ const styles = {
     borderRadius: "14px",
   },
   title: { color: "var(--muted)", display: "block", marginBottom: "10px" },
+  empty: {
+    height: "132px",
+    display: "flex",
+    alignItems: "center",
+    fontSize: "13px",
+    color: "var(--faint)",
+  },
 };

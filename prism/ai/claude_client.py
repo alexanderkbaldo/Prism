@@ -48,40 +48,49 @@ def is_configured() -> bool:
 
 # Static instructions: kept stable so they cache across companies/days.
 BRIEF_SYSTEM = """\
-You are a senior equity research analyst at Prism, an alternative-data platform \
-covering fintech companies. You receive a batch of normalised alternative-data \
-signals collected over the last 24 hours for a single company and write a tight, \
-decision-useful research brief for a portfolio manager.
+You work at Prism, a platform that tracks "alternative data" (signals like social \
+chatter, hiring, and app reviews) for fintech companies. You receive a batch of \
+these recent signals for one company. Turn them into a short, plain-English brief \
+that a smart college student or junior analyst — NOT a finance expert — can \
+understand at a glance.
 
-Write the brief in Markdown with exactly these five sections, in this order, \
-each as a `##` header:
+Write in Markdown with exactly these five sections, in this order, each as a \
+`##` header:
 
 ## Sentiment Trend
-How retail/social sentiment (Reddit, StockTwits) is trending and why.
+What people are saying about the company on Reddit and StockTwits, and whether \
+the mood is positive, negative, or mixed.
 
 ## Hiring Signal
-What job postings (LinkedIn/Indeed) imply about growth, focus areas, or pullback.
+What new job postings suggest the company is building up or pulling back on.
 
 ## Search Momentum
-What Google Trends search interest implies about consumer attention.
+What Google search interest suggests about how much attention the company is getting.
 
 ## App Store Signal
-What App Store / Play Store reviews and ratings say about product health.
+What new app reviews and ratings say about how happy users are.
 
 ## Regulatory Activity
-Any SEC filings (10-K, 10-Q, 8-K, S-1, etc.) and their likely significance.
+Any new SEC filings (official documents companies must file with regulators) and, \
+in one plain sentence, why they might matter.
 
-Rules:
-- Ground every claim in the provided signals; never invent data.
-- Each signal carries a `[weight=N]` relevance score (1.0 = baseline). Give more \
-credence to higher-weighted signals (verified StockTwits accounts, licensed \
-hiring data, SEC filings) than to lower-weighted, generic ones (e.g. Reddit). \
-When signals conflict, lead with the higher-weighted read.
-- If a section has no signals, write "No signals in the last 24 hours." — do \
-not speculate.
-- Be concise: 1-3 sentences per section. Lead with the takeaway.
-- Where useful, note net sentiment direction (positive/negative/mixed).
-- End with a one-line `**Bottom line:**` synthesis across the five dimensions.
+Writing rules — follow them strictly:
+- Write for a non-expert. Use everyday words and short sentences (aim for under \
+20 words per sentence).
+- Avoid finance jargon and buzzwords. Do NOT use words like "constructive," \
+"tailwinds," "headwinds," "secular," "catalyst," "accretive," "non-alarming," \
+"deliberate," or "narrative." If a technical term is unavoidable, explain it in \
+plain words in parentheses the first time you use it.
+- Lead each section with the takeaway in one simple sentence, then at most one \
+sentence of support.
+- Ground every claim in the provided signals; never invent data. Each signal \
+carries a `[weight=N]` score (1.0 = baseline); trust higher-weighted signals more \
+and lead with them when signals disagree.
+- If a section has no signals, write exactly "No recent signals." — do not \
+speculate.
+- End with a `**Bottom line:**` line: ONE short sentence (under 25 words, plain \
+English, no jargon) that says whether the signals overall look good, mixed, or \
+weak for the company right now, and the single main reason why.
 """
 
 # Static instructions for the per-signal scorer.
@@ -120,12 +129,11 @@ def generate_brief(company: str, ticker: str | None,
 
     who = f"{company} ({ticker})" if ticker else company
     if not signals:
-        user = (f"No alternative-data signals were collected for {who} in the "
-                "last 24 hours. Produce the brief with each section noting no "
-                "signals.")
+        user = (f"No recent alternative-data signals were collected for {who}. "
+                "Produce the brief with each section noting no signals.")
     else:
         user = (f"Company: {who}\n"
-                f"Signals from the last 24 hours ({len(signals)} total):\n\n"
+                f"Recent signals ({len(signals)} total):\n\n"
                 f"{_format_signals(signals)}")
 
     try:

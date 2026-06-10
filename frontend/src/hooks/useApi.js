@@ -7,7 +7,7 @@ async function apiFetch(path) {
   return res.json();
 }
 
-export function useSignals(ticker, days = 7) {
+export function useSignals(ticker, days = 7, category = null) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -16,11 +16,15 @@ export function useSignals(ticker, days = 7) {
     if (!ticker) return;
     setLoading(true);
     setError(null);
-    apiFetch(`/signals?company=${ticker}&days=${days}`)
+    // A category filter keeps sparse signals (e.g. filings) from being
+    // truncated by the row limit behind hundreds of high-volume ones.
+    const path =
+      `/signals?company=${ticker}&days=${days}` + (category ? `&type=${category}` : "");
+    apiFetch(path)
       .then(setData)
       .catch(setError)
       .finally(() => setLoading(false));
-  }, [ticker, days]);
+  }, [ticker, days, category]);
 
   useEffect(() => { fetch_(); }, [fetch_]);
   return { data, loading, error, refresh: fetch_ };

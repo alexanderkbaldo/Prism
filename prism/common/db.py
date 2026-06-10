@@ -246,25 +246,43 @@ def unscored_signals(categories: list[str], limit: int) -> list[dict]:
         return cur.fetchall()
 
 
-def recent_signals_for_company(company: str, hours: int, limit: int) -> list[dict]:
+def recent_signals_for_company(
+    company: str, hours: int, limit: int, per_category: int = 30
+) -> list[dict]:
     """Signals for one company over the trailing window, newest first.
 
     `company` matches either ticker or canonical name. Used to assemble the
     daily Claude brief, so it returns the Claude-ready `summary_text`.
+
+    Caps each category at `per_category` before applying the overall `limit`,
+    so a high-volume category (e.g. social sentiment) can't crowd out sparse
+    but important ones (e.g. SEC filings) — every category that has signals in
+    the window stays represented in the brief.
     """
     with get_cursor() as cur:
         cur.execute(
             """
+            WITH ranked AS (
+                SELECT id, source, category, company, ticker, title, sentiment,
+                       url, event_timestamp, summary_text, weight, metrics,
+                       row_number() OVER (
+                           PARTITION BY category
+                           ORDER BY weight DESC, event_timestamp DESC
+                       ) AS rn
+                FROM signals
+                WHERE (upper(ticker) = upper(%(company)s)
+                       OR lower(company) = lower(%(company)s))
+                  AND event_timestamp >= now() - (%(hours)s * interval '1 hour')
+            )
             SELECT id, source, category, company, ticker, title, sentiment,
                    url, event_timestamp, summary_text, weight, metrics
-            FROM signals
-            WHERE (upper(ticker) = upper(%(company)s)
-                   OR lower(company) = lower(%(company)s))
-              AND event_timestamp >= now() - (%(hours)s * interval '1 hour')
+            FROM ranked
+            WHERE rn <= %(per_category)s
             ORDER BY weight DESC, event_timestamp DESC
             LIMIT %(limit)s
             """,
-            {"company": company, "hours": hours, "limit": limit},
+            {"company": company, "hours": hours, "limit": limit,
+             "per_category": per_category},
         )
         return cur.fetchall()
 

@@ -71,6 +71,9 @@ button { font-family: inherit; }
   /* Charts: 2 columns → 1. */
   .chart-grid { grid-template-columns: 1fr !important; }
 
+  /* Signal rows: takeaway over chart instead of side-by-side. */
+  .signal-row { grid-template-columns: 1fr !important; gap: 18px !important; }
+
   /* Company switcher stacks under its label and wraps. */
   .switch-row {
     flex-direction: column !important;

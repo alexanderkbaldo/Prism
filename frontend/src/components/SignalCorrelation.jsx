@@ -2,9 +2,9 @@ import React from "react";
 import { useCorrelation } from "../hooks/useApi";
 
 const DIR = {
-  bullish: { color: "var(--up)", arrow: "↑", word: "Bullish" },
-  bearish: { color: "var(--down)", arrow: "↓", word: "Bearish" },
-  neutral: { color: "var(--faint)", arrow: "·", word: "Neutral" },
+  bullish: { color: "var(--up)", arrow: "↑", word: "Up" },
+  bearish: { color: "var(--down)", arrow: "↓", word: "Down" },
+  neutral: { color: "var(--faint)", arrow: "·", word: "Flat" },
 };
 
 export default function SignalCorrelation({ ticker }) {
@@ -21,8 +21,11 @@ export default function SignalCorrelation({ ticker }) {
 
   return (
     <section style={styles.card}>
-      <span className="eyebrow" style={styles.eyebrow}>Signal correlation</span>
+      <span className="eyebrow" style={styles.eyebrow}>Do the signals agree?</span>
       <p style={{ ...styles.insight, color: headColor }}>{insight}</p>
+      <p style={styles.note}>
+        When several signals move the same way, it's a stronger read than any one alone.
+      </p>
 
       {signals.length > 0 && (
         <div style={styles.row}>
@@ -60,6 +63,7 @@ const styles = {
     lineHeight: 1.4,
     margin: "12px 0 0",
   },
+  note: { fontSize: "12px", color: "var(--faint)", lineHeight: 1.5, margin: "8px 0 0" },
   row: {
     display: "flex",
     flexWrap: "wrap",

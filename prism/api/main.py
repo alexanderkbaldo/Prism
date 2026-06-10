@@ -175,9 +175,17 @@ def get_correlation(
                 "insight": "3 signals aligned bullish this week"}
 
 
+class ChatTurn(BaseModel):
+    role: str  # "user" or "assistant"
+    text: str = ""
+
+
 class ChatRequest(BaseModel):
     question: str
     company: str  # ticker (HOOD) or canonical name (Robinhood)
+    # Prior turns in this conversation, oldest first. Lets follow-ups like
+    # "why?" resolve against earlier context. Server caps the length.
+    history: list[ChatTurn] = []
 
 
 @app.post("/chat", dependencies=CHAT_PROTECTED)
@@ -190,9 +198,11 @@ def chat(req: ChatRequest) -> StreamingResponse:
     """
     from prism.ai.chat import stream_answer
 
+    history = [{"role": t.role, "text": t.text} for t in req.history]
+
     def generate():
         try:
-            yield from stream_answer(req.question, req.company)
+            yield from stream_answer(req.question, req.company, history=history)
         except ValueError as e:
             yield f"[error] {e}"
         except Exception:  # noqa: BLE001

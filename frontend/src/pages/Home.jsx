@@ -1,7 +1,19 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import StatRow from "../components/StatRow";
+import Verdict from "../components/Verdict";
 import Footer from "../components/Footer";
+import { useBrief } from "../hooks/useApi";
+import { extractBottomLine } from "../utils/brief";
+
+// The brief's plain-English bottom line — gives the preview an AI "read", not
+// just numbers. Mirrors what the dashboard shows.
+function PreviewRead({ ticker }) {
+  const { data } = useBrief(ticker);
+  const { sentence } = extractBottomLine(data?.brief?.brief_text);
+  if (!sentence) return null;
+  return <p style={styles.previewRead}>{sentence}</p>;
+}
 
 const STEPS = [
   { n: "1", title: "Collect", body: "Five alternative-data signals, gathered every morning." },
@@ -39,6 +51,8 @@ export default function Home() {
           <span style={styles.previewMeta}>Robinhood · last 7 days</span>
         </div>
         <h2 style={styles.previewName}>Robinhood</h2>
+        <Verdict ticker="HOOD" />
+        <PreviewRead ticker="HOOD" />
         <StatRow ticker="HOOD" />
         <Link to="/dashboard" style={styles.previewLink}>See the full brief →</Link>
       </section>
@@ -136,6 +150,15 @@ const styles = {
     letterSpacing: "-0.01em",
     color: "var(--ink)",
     marginTop: "12px",
+  },
+  previewRead: {
+    fontFamily: "var(--serif)",
+    fontSize: "20px",
+    fontStyle: "italic",
+    lineHeight: 1.45,
+    color: "var(--muted)",
+    margin: "16px 0 4px",
+    maxWidth: "620px",
   },
   previewLink: {
     fontSize: "13px",

@@ -77,15 +77,15 @@ def compute(rows: list[dict]) -> dict[str, Any]:
 
     if bullish and len(bullish) > len(bearish) and len(bullish) >= ALIGN_MIN:
         aligned = {"direction": "bullish", "count": len(bullish)}
-        insight = f"{len(bullish)} signals aligned bullish this week"
+        insight = f"{len(bullish)} signals are pointing up this week"
     elif bearish and len(bearish) > len(bullish) and len(bearish) >= ALIGN_MIN:
         aligned = {"direction": "bearish", "count": len(bearish)}
-        insight = f"{len(bearish)} signals aligned bearish this week"
+        insight = f"{len(bearish)} signals are pointing down this week"
     elif bullish and bearish:
         aligned = {"direction": "mixed", "count": 0}
-        insight = "Signals are split this week — no clear alignment"
+        insight = "The signals are split this week — some up, some down"
     else:
         aligned = {"direction": "none", "count": 0}
-        insight = "Not enough signal movement to call a direction this week"
+        insight = "Not much movement in the signals this week"
 
     return {"signals": signals, "aligned": aligned, "insight": insight}

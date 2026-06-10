@@ -90,7 +90,7 @@ def _build_context(company_name: str) -> str:
 
     try:
         signals = recent_signals_for_company(
-            company_name, hours=settings.brief_lookback_hours * 7,
+            company_name, hours=settings.brief_lookback_hours,
             limit=settings.brief_max_signals,
         )
     except Exception:  # noqa: BLE001 - DB not up
@@ -118,8 +118,51 @@ def _build_context(company_name: str) -> str:
     )
 
 
-def stream_answer(question: str, company: str) -> Iterator[str]:
+# Most recent conversation turns to replay back to the model. Bounds token
+# spend on long chats while keeping enough context for natural follow-ups.
+MAX_HISTORY_TURNS = 10
+
+
+def _build_messages(
+    question: str, history: list[dict[str, Any]] | None
+) -> list[dict[str, str]]:
+    """Turn prior turns + the new question into a valid Anthropic message list.
+
+    The Messages API requires the list to start with a user turn and alternate
+    roles, so we drop empties, trim to the last few turns, and strip any leading
+    assistant turns before appending the current question.
+    """
+    raw: list[dict[str, str]] = []
+    for turn in (history or []):
+        role = turn.get("role")
+        text = (turn.get("text") or turn.get("content") or "").strip()
+        if role in ("user", "assistant") and text:
+            raw.append({"role": role, "content": text})
+
+    raw = raw[-MAX_HISTORY_TURNS:]
+    raw.append({"role": "user", "content": question})
+
+    # Enforce the API's contract: start with a user turn and alternate roles.
+    # Drop leading assistant turns; collapse any same-role run to its last
+    # message (so the current question always survives).
+    msgs: list[dict[str, str]] = []
+    for m in raw:
+        if not msgs and m["role"] != "user":
+            continue
+        if msgs and msgs[-1]["role"] == m["role"]:
+            msgs[-1] = m
+        else:
+            msgs.append(m)
+    return msgs
+
+
+def stream_answer(
+    question: str, company: str, history: list[dict[str, Any]] | None = None
+) -> Iterator[str]:
     """Yield the answer text incrementally for a question about one company.
+
+    `history` carries prior turns in the conversation so follow-up questions
+    ("why?", "compare that to hiring") resolve against earlier context.
 
     Raises ValueError for an unknown company so the API can return 400.
     """
@@ -138,11 +181,14 @@ def stream_answer(question: str, company: str) -> Iterator[str]:
                "alerts, and research brief.")
         return
 
+    # Company data context lives in the system prompt (stable across a
+    # conversation, so it caches) while the user/assistant turns carry the
+    # actual back-and-forth.
     context = _build_context(matched.name)
-    user_turn = (
-        f"Company: {who}\n\n"
-        f"=== CONTEXT ===\n{context}\n=== END CONTEXT ===\n\n"
-        f"User question: {question}"
+    context_block = (
+        f"Company: {who}\n\n=== CONTEXT ===\n{context}\n=== END CONTEXT ===\n\n"
+        "Answer the user's questions using only this context. In a multi-turn "
+        "conversation, resolve follow-ups against the earlier exchange."
     )
 
     with get_client().messages.stream(
@@ -150,9 +196,11 @@ def stream_answer(question: str, company: str) -> Iterator[str]:
         max_tokens=1024,
         system=[
             {"type": "text", "text": CHAT_SYSTEM,
-             "cache_control": {"type": "ephemeral"}}
+             "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": context_block,
+             "cache_control": {"type": "ephemeral"}},
         ],
-        messages=[{"role": "user", "content": user_turn}],
+        messages=_build_messages(question, history),
     ) as stream:
         for text in stream.text_stream:
             yield text
