@@ -62,3 +62,61 @@ launcher should stream answers.
 - Local dev is unchanged: leave `VITE_API_URL` blank (Vite proxies `/api` →
   `localhost:8000`) and run `docker compose up -d`.
 - Rotate any key that has ever appeared in logs before going public.
+
+---
+
+# Snapshot deploy (recommended first ship)
+
+Ship the **site only** (API + Postgres + Redis + frontend) reading from a
+one-time snapshot of your local data. No background workers, ~$0 ongoing, never
+crash-loops. Data is frozen until you re-seed. This is the fastest path to a
+real URL; graduate to live workers later if you want daily refresh.
+
+What runs: **Railway** = Postgres + Redis + API. **Vercel** = frontend.
+What you do NOT deploy: `normaliser`, `scorer`, `prefect-worker`.
+
+### 0. Take a fresh snapshot (local)
+```
+./scripts/backup_db.sh
+```
+Note the newest file under `./backups/` — that's your seed. Take it *after*
+regenerating briefs so the deployed copy has the latest plain-language ones.
+
+### 1. Railway — Postgres + Redis + API
+1. **New Project → Deploy from GitHub repo** (`blakelevine650-wq/Prism`).
+2. **Add plugins:** Postgres and Redis. (Redis here only powers the per-IP rate
+   limiter — keep it so a public `/chat` can't burn your Claude credits.)
+3. The **API service** builds from `railway.toml`, runs the idempotent
+   migration, and serves on `$PORT`. Let the first deploy finish.
+4. Grab the DB URL: **Postgres plugin → Connect → "Postgres Connection URL".**
+5. **Seed it from your machine** (needs `psql`: `brew install libpq && brew link --force libpq`):
+   ```
+   ./scripts/seed_remote.sh --reset backups/prism-YYYYMMDD-HHMMSS.sql.gz "<that URL>"
+   ```
+   `--reset` wipes the freshly-migrated empty tables and loads your snapshot
+   cleanly. It prints the target and asks you to type `yes` first.
+6. **API service variables** (Settings → Variables):
+   - `ANTHROPIC_API_KEY` — chat needs it live.
+   - `CHAT_RATE_LIMIT_PER_MINUTE=5` — bounds chat-credit spend by visitors.
+   - `CORS_ALLOW_ORIGINS=https://<your-app>.vercel.app` — set after step 2 below.
+   - **Not needed** in snapshot mode: `OPENAI_API_KEY`, `SERPAPI_KEY`.
+
+### 2. Vercel — frontend
+1. **New Project → import the repo**, **Root Directory = `frontend`** (Vite auto-detected).
+2. Env var: `VITE_API_URL=https://<your-api>.up.railway.app`.
+3. Deploy → note the assigned `https://<your-app>.vercel.app`.
+
+### 3. Connect (CORS)
+Set the API's `CORS_ALLOW_ORIGINS` to the Vercel URL, redeploy the API, verify:
+```
+curl -s -i 'https://<your-api>.up.railway.app/healthz' \
+  -H 'Origin: https://<your-app>.vercel.app' | grep -i access-control-allow-origin
+```
+Then open the Vercel URL — dashboard loads the snapshot, chat streams live.
+
+### Refresh the snapshot later
+```
+./scripts/backup_db.sh
+./scripts/seed_remote.sh --reset backups/prism-<new>.sql.gz "<railway db url>"
+```
+The site updates instantly (no redeploy needed — it's just data).
