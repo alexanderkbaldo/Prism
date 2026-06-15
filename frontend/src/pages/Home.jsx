@@ -15,6 +15,16 @@ function PreviewRead({ ticker }) {
   return <p style={styles.previewRead}>{sentence}</p>;
 }
 
+// Section eyebrow with a small sage accent dot — one warm accent per section.
+function SectionLabel({ children }) {
+  return (
+    <span className="eyebrow" style={styles.sectionLabel}>
+      <span style={styles.labelDot} />
+      {children}
+    </span>
+  );
+}
+
 const STEPS = [
   { n: "1", title: "Collect", body: "Five alternative-data signals, gathered every morning." },
   { n: "2", title: "Detect", body: "Anomalies flagged automatically as they emerge." },
@@ -34,20 +44,41 @@ export default function Home() {
     <div className="page" style={styles.column}>
       {/* Hero */}
       <section className="home-hero" style={styles.hero}>
-        <h1 className="home-headline" style={styles.headline}>
-          Fintech intelligence before the earnings call.
-        </h1>
-        <p style={styles.sub}>
-          Prism monitors five alternative-data signals across leading fintech
-          companies and uses AI to turn them into readable research.
-        </p>
-        <Link to="/dashboard" style={styles.cta}>Launch dashboard</Link>
+        {/* Faint decorative line-chart motif behind the headline. */}
+        <svg
+          style={styles.heroMotif}
+          viewBox="0 0 900 200"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <polyline
+            points="0,150 90,140 180,158 270,120 360,132 450,80 540,104 630,52 720,74 810,28 900,44"
+            fill="none"
+            stroke="var(--sage)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx="450" cy="80" r="4" fill="var(--sage)" />
+          <circle cx="810" cy="28" r="4" fill="var(--sage)" />
+        </svg>
+
+        <div style={styles.heroContent}>
+          <h1 className="home-headline" style={styles.headline}>
+            Fintech intelligence before the earnings call.
+          </h1>
+          <p style={styles.sub}>
+            Prism monitors five alternative-data signals across leading fintech
+            companies and uses AI to turn them into readable research.
+          </p>
+          <Link to="/dashboard" style={styles.cta}>Launch dashboard</Link>
+        </div>
       </section>
 
       {/* A look inside */}
       <section style={styles.section}>
         <div style={styles.sectionHead}>
-          <span className="eyebrow">A look inside</span>
+          <SectionLabel>A look inside</SectionLabel>
           <span style={styles.previewMeta}>Robinhood · last 7 days</span>
         </div>
         <h2 style={styles.previewName}>Robinhood</h2>
@@ -59,7 +90,7 @@ export default function Home() {
 
       {/* How it works */}
       <section style={styles.section}>
-        <span className="eyebrow">How it works</span>
+        <SectionLabel>How it works</SectionLabel>
         <div style={styles.steps}>
           {STEPS.map((s) => (
             <div key={s.n} style={styles.step}>
@@ -73,7 +104,7 @@ export default function Home() {
 
       {/* What we track */}
       <section style={styles.section}>
-        <span className="eyebrow">What we track</span>
+        <SectionLabel>What we track</SectionLabel>
         <ul style={styles.tracked}>
           {TRACKED.map(([name, desc]) => (
             <li key={name} style={styles.trackedRow}>
@@ -96,6 +127,7 @@ const styles = {
     padding: "0 56px 80px",
   },
   hero: {
+    position: "relative",
     paddingTop: "160px",
     paddingBottom: "150px",
     maxWidth: "720px",
@@ -103,6 +135,18 @@ const styles = {
     marginRight: "auto",
     textAlign: "center",
   },
+  heroMotif: {
+    position: "absolute",
+    top: "50%",
+    left: "-12%",
+    width: "124%",
+    height: "320px",
+    transform: "translateY(-50%)",
+    opacity: 0.1,
+    pointerEvents: "none",
+    zIndex: 0,
+  },
+  heroContent: { position: "relative", zIndex: 1 },
   headline: {
     fontFamily: "var(--serif)",
     fontSize: "56px",
@@ -142,6 +186,18 @@ const styles = {
     alignItems: "baseline",
     justifyContent: "space-between",
   },
+  sectionLabel: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  labelDot: {
+    width: "6px",
+    height: "6px",
+    borderRadius: "50%",
+    background: "var(--sage)",
+    display: "inline-block",
+  },
   previewMeta: { fontSize: "11px", color: "var(--faint)" },
   previewName: {
     fontFamily: "var(--serif)",
@@ -175,8 +231,15 @@ const styles = {
   step: { paddingRight: "20px" },
   stepN: {
     fontFamily: "var(--serif)",
-    fontSize: "22px",
+    fontSize: "18px",
     color: "var(--sage)",
+    width: "38px",
+    height: "38px",
+    borderRadius: "50%",
+    background: "var(--sage-soft)",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   stepTitle: {
     fontFamily: "var(--serif)",

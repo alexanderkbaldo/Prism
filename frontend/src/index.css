@@ -55,6 +55,11 @@ body {
 
 button { font-family: inherit; }
 
+/* Nav links: warm sage on hover (inline styles need !important to be
+   overridden). NavLink adds .active to the current route — leave it alone. */
+.nav-links a { transition: color 0.15s; }
+.nav-links a:not(.active):hover { color: var(--sage) !important; }
+
 /* Responsive overrides. Components use inline styles (desktop values), so these
    use !important to take over on small screens. */
 @media (max-width: 720px) {

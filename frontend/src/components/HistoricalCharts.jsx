@@ -38,6 +38,17 @@ function tooltipFormatter(value, _name, { payload }, unit) {
   return [`${v}${unit}`, undefined];
 }
 
+// Faint skeleton for a signal with no data — a dashed baseline plus muted
+// "Awaiting data" reads as intentional rather than broken.
+function ChartSkeleton() {
+  return (
+    <div style={styles.skeleton}>
+      <div style={styles.skeletonBaseline} />
+      <span style={styles.skeletonLabel}>Awaiting data</span>
+    </div>
+  );
+}
+
 function MiniChart({ title, points, field, domain, unit }) {
   const data = (points || [])
     .map((p) => ({ day: fmtDay(p.day), value: p[field] }))
@@ -48,11 +59,11 @@ function MiniChart({ title, points, field, domain, unit }) {
   return (
     <div style={styles.card}>
       <span className="eyebrow" style={styles.title}>{title}</span>
-      {data.length < 3 ? (
+      {data.length === 0 ? (
+        <ChartSkeleton />
+      ) : data.length < 3 ? (
         <div style={styles.empty}>
-          {data.length === 0
-            ? "No data in the last 30 days."
-            : `Building history — ${data.length} day${data.length === 1 ? "" : "s"} so far.`}
+          {`Building history — ${data.length} day${data.length === 1 ? "" : "s"} so far.`}
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={132}>
@@ -146,5 +157,28 @@ const styles = {
     alignItems: "center",
     fontSize: "13px",
     color: "var(--faint)",
+  },
+  skeleton: {
+    height: "132px",
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  skeletonBaseline: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: "26px",
+    borderTop: "1px dashed var(--hairline)",
+  },
+  skeletonLabel: {
+    position: "relative",
+    fontSize: "11px",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "var(--faint)",
+    background: "var(--surface)",
+    padding: "0 8px",
   },
 };

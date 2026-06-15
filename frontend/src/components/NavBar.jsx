@@ -16,7 +16,7 @@ export default function NavBar() {
           <Logo />
         </Link>
 
-        <nav style={styles.links}>
+        <nav className="nav-links" style={styles.links}>
           {LINKS.map((l) => (
             <NavLink
               key={l.to}
