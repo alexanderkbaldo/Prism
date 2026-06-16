@@ -48,11 +48,12 @@ export default function SignalCorrelation({ ticker }) {
 
 const styles = {
   card: {
-    marginTop: "30px",
-    padding: "20px 24px",
-    background: "var(--surface)",
+    marginTop: "40px",
+    padding: "28px 32px",
+    background: "var(--paper)",
     border: "0.5px solid var(--hairline)",
-    borderRadius: "14px",
+    borderRadius: "10px",
+    boxShadow: "var(--shadow-card)",
   },
   eyebrow: { color: "var(--faint)" },
   insight: {
@@ -75,9 +76,9 @@ const styles = {
     flexDirection: "column",
     gap: "3px",
     padding: "8px 13px",
-    background: "var(--bg)",
+    background: "var(--surface)",
     border: "0.5px solid var(--hairline)",
-    borderRadius: "9px",
+    borderRadius: "8px",
   },
   chipLabel: {
     fontSize: "10px",

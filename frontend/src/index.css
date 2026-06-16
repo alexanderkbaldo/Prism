@@ -3,10 +3,14 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* Surfaces */
-  --bg:            #E7DCCB;  /* warm sand */
-  --surface:       #DFD3C0;  /* secondary panels */
+  /* Surfaces — elevation comes from gentle warm shifts, not heavy shadows.
+     canvas (sand) → paper card (lighter, lifts off) → raised (lightest). */
+  --bg:            #E7DCCB;  /* warm sand — page canvas (level 0) */
+  --surface:       #DFD3C0;  /* warm gray — inset bands within cards (level 2) */
   --hairline:      #CBBDA8;  /* borders / dividers */
+  --paper:         #F1E8D8;  /* card surface — lifts off the sand canvas (level 1) */
+  --paper-raised:  #F7F1E6;  /* elevated panel — the primary read (level 1+) */
+  --shadow-card:   0 1px 3px rgba(26, 32, 24, 0.04), 0 4px 12px rgba(26, 32, 24, 0.03);
 
   /* Accent */
   --sage:          #6B8F71;

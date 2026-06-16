@@ -93,9 +93,10 @@ function deltaFrom(metric, cur, prior) {
   };
 }
 
-export default function StatRow({ ticker }) {
+export default function StatRow({ ticker, variant = "row" }) {
   const { data, loading } = useSeries(ticker, 14);
   const series = data?.series || {};
+  const cards = variant === "cards";
 
   // Trailing 7 days vs the 7 days before that.
   const curFrom = isoDaysAgo(6);
@@ -110,7 +111,7 @@ export default function StatRow({ ticker }) {
       <div style={styles.caption}>
         Trailing 7 days<span style={styles.captionDim}> · change vs prior 7 days</span>
       </div>
-      <div className="stat-grid" style={styles.row}>
+      <div className="stat-grid" style={{ ...styles.row, ...(cards ? styles.rowCards : {}) }}>
         {STATS.map((stat, i) => {
         const points = series[stat.key];
         const cur = agg(points, curFrom, today);
@@ -139,7 +140,10 @@ export default function StatRow({ ticker }) {
           <div
             key={stat.key}
             className="stat-cell"
-            style={{ ...styles.cell, ...(i > 0 ? styles.cellDivider : {}) }}
+            style={{
+              ...styles.cell,
+              ...(cards ? styles.cellCard : i > 0 ? styles.cellDivider : {}),
+            }}
           >
             <span style={styles.labelRow}>
               <span className="eyebrow" style={styles.label}>{stat.label}</span>
@@ -191,6 +195,19 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "repeat(5, 1fr)",
     margin: "14px 0 44px",
+  },
+  // Ventriloc KPI tiles: each stat a paper card lifting off the canvas, set in
+  // a grid with 20px gaps (no dividers).
+  rowCards: {
+    gap: "20px",
+    margin: "16px 0 0",
+  },
+  cellCard: {
+    padding: "22px 22px 20px",
+    background: "var(--paper)",
+    border: "0.5px solid var(--hairline)",
+    borderRadius: "10px",
+    boxShadow: "var(--shadow-card)",
   },
   labelRow: {
     display: "flex",

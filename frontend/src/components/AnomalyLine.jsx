@@ -84,8 +84,8 @@ const styles = {
   // Deliberately quiet: a footnote-weight section, not an alarm. The synthesised
   // brief above is the headline; this is supporting context.
   wrap: {
-    marginTop: "30px",
-    paddingTop: "20px",
+    marginTop: "48px",
+    paddingTop: "24px",
     borderTop: "0.5px solid var(--hairline)",
   },
   head: { display: "flex", alignItems: "baseline", gap: "12px" },

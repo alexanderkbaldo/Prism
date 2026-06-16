@@ -288,7 +288,15 @@ export default function SignalReport({ ticker }) {
 }
 
 const styles = {
-  section: { marginTop: "8px" },
+  // The elevated product panel — the reason you came to the page. A paper card
+  // that lifts off the canvas with a whisper-soft shadow.
+  section: {
+    background: "var(--paper-raised)",
+    border: "0.5px solid var(--hairline)",
+    borderRadius: "12px",
+    boxShadow: "var(--shadow-card)",
+    padding: "36px 40px 8px",
+  },
   head: {
     display: "flex", alignItems: "baseline", justifyContent: "space-between",
     paddingBottom: "16px", borderBottom: "0.5px solid var(--hairline)",
@@ -296,7 +304,7 @@ const styles = {
   meta: { fontSize: "11px", color: "var(--faint)" },
   callout: {
     background: "var(--surface)", border: "0.5px solid var(--hairline)",
-    borderRadius: "12px", padding: "16px 18px", margin: "26px 0 6px",
+    borderRadius: "10px", padding: "20px 22px", margin: "28px 0 8px",
   },
   calloutHead: { display: "flex", alignItems: "center", gap: "11px" },
   calloutLabel: { color: "var(--faint)" },
@@ -335,11 +343,11 @@ const styles = {
   chartEmpty: {
     height: "150px", display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: "13px", color: "var(--faint)", background: "var(--surface)",
-    border: "0.5px solid var(--hairline)", borderRadius: "12px",
+    border: "0.5px solid var(--hairline)", borderRadius: "8px",
   },
   filings: {
     listStyle: "none", margin: 0, padding: "16px 18px",
-    background: "var(--surface)", border: "0.5px solid var(--hairline)", borderRadius: "12px",
+    background: "var(--surface)", border: "0.5px solid var(--hairline)", borderRadius: "8px",
     display: "flex", flexDirection: "column", gap: "12px",
   },
   filingItem: {

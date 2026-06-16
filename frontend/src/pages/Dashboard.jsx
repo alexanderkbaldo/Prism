@@ -81,7 +81,7 @@ export default function Dashboard({ ticker, onTickerChange }) {
 
       <Hero ticker={ticker} />
       <LastUpdated ticker={ticker} />
-      <StatRow ticker={ticker} />
+      <StatRow ticker={ticker} variant="cards" />
       {/* Plain-English read per signal, each paired with its chart. */}
       <div style={styles.briefWrap}>
         <SignalReport ticker={ticker} />
@@ -96,9 +96,9 @@ export default function Dashboard({ ticker, onTickerChange }) {
 
 const styles = {
   column: {
-    maxWidth: "1440px",
+    maxWidth: "1200px",
     margin: "0 auto",
-    padding: "0 56px 80px",
+    padding: "0 40px 80px",
   },
   switchRow: {
     display: "flex",
@@ -132,11 +132,11 @@ const styles = {
   nameRow: { display: "flex", alignItems: "baseline", gap: "14px" },
   name: {
     fontFamily: "var(--serif)",
-    fontSize: "38px",
+    fontSize: "40px",
     fontWeight: 400,
     letterSpacing: "-0.02em",
     color: "var(--ink)",
-    lineHeight: 1.1,
+    lineHeight: 1.05,
   },
   ticker: { fontSize: "12px", letterSpacing: "0.08em", color: "var(--faint)" },
   tracking: {
@@ -156,5 +156,5 @@ const styles = {
     marginTop: "20px",
     maxWidth: "620px",
   },
-  briefWrap: { marginTop: "24px" },
+  briefWrap: { marginTop: "48px" },
 };
