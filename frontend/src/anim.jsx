@@ -7,21 +7,23 @@ export const EASE = [0.22, 1, 0.36, 1];
 // Variants for a staggered group: parent orchestrates, children fade-up.
 export const groupVariants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.1 } },
+  show: { transition: { staggerChildren: 0.12 } },
 };
 
 export const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
 };
 
-// Single element that fades up as it enters the viewport (once).
+// Single element that fades up as it enters the viewport (once). Headlines pass
+// a larger y (40) and longer duration (0.8) for a more dramatic "arrival".
 export function Reveal({
   children,
   as = "div",
   delay = 0,
-  y = 24,
-  amount = 0.2,
+  y = 30,
+  duration = 0.7,
+  amount = 0.3,
   style,
   className,
 }) {
@@ -42,7 +44,7 @@ export function Reveal({
       initial={{ opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount }}
-      transition={{ duration: 0.6, ease: EASE, delay }}
+      transition={{ duration, ease: EASE, delay }}
     >
       {children}
     </Tag>

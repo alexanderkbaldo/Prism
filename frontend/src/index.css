@@ -176,4 +176,8 @@ button { font-family: inherit; }
   /* Home content grids collapse to one column. */
   .steps-grid { grid-template-columns: 1fr !important; gap: 36px !important; }
   .track-grid { grid-template-columns: 1fr !important; }
+
+  /* Scroll-story sections: stack the two-column chapter and breathe less. */
+  .story-grid { grid-template-columns: 1fr !important; gap: 44px !important; }
+  .company-grid { grid-template-columns: 1fr 1fr !important; }
 }

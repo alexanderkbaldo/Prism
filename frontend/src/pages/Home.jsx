@@ -2,21 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import Footer from "../components/Footer";
-import { Reveal, RevealGroup, RevealChild, EASE } from "../anim";
-
-const STEPS = [
-  { n: "1", title: "Collect", body: "Five alternative-data signals, gathered every morning." },
-  { n: "2", title: "Detect", body: "Anomalies flagged automatically as they emerge." },
-  { n: "3", title: "Synthesize", body: "AI writes a plain-English research brief." },
-];
-
-const TRACKED = [
-  ["Social sentiment", "Reddit and StockTwits chatter, scored for tone."],
-  ["Search interest", "Google Trends momentum, week over week."],
-  ["Hiring activity", "Job postings as a read on growth and focus."],
-  ["App store reviews", "Ratings and review sentiment over time."],
-  ["SEC filings", "New 10-K, 10-Q, 8-K, and S-1 activity."],
-];
+import { Reveal, RevealGroup, RevealChild, CountUp, EASE } from "../anim";
 
 const MOCK_CHIPS = [
   ["Sentiment", "87"],
@@ -25,33 +11,37 @@ const MOCK_CHIPS = [
   ["Filings", "2"],
 ];
 
-function SectionLabel({ children, dark }) {
-  return (
-    <span style={{ ...styles.label, ...(dark ? styles.labelDark : {}) }}>{children}</span>
-  );
-}
+const SIGNALS = ["Social", "Hiring", "Search", "App Reviews", "Filings"];
+
+const COMPANIES = [
+  ["Robinhood", "HOOD"],
+  ["Affirm", "AFRM"],
+  ["Block", "XYZ"],
+  ["Klarna", "KLAR"],
+  ["Chime", "CHYM"],
+];
 
 function MockCard() {
   return (
-    <div className="home-mockcard" style={styles.mockCard}>
-      <div style={styles.mockHead}>
-        <span style={styles.mockEyebrow}>Research brief</span>
-        <span style={styles.mockTicker}>HOOD</span>
+    <div className="home-mockcard" style={s.mockCard}>
+      <div style={s.mockHead}>
+        <span style={s.mockEyebrow}>Research brief</span>
+        <span style={s.mockTicker}>HOOD</span>
       </div>
-      <h3 style={styles.mockName}>Robinhood</h3>
-      <div style={styles.mockScoreRow}>
-        <span style={styles.mockScore}>87</span>
-        <span style={styles.mockScoreLabel}>Sentiment score</span>
+      <h3 style={s.mockName}>Robinhood</h3>
+      <div style={s.mockScoreRow}>
+        <span style={s.mockScore}>87</span>
+        <span style={s.mockScoreLabel}>Sentiment score</span>
       </div>
-      <p style={styles.mockBrief}>
+      <p style={s.mockBrief}>
         Elevated search interest and insider activity suggest near-term upside
         despite recent pullback.
       </p>
-      <div style={styles.mockChips}>
+      <div style={s.mockChips}>
         {MOCK_CHIPS.map(([label, value]) => (
-          <div key={label} style={styles.chip}>
-            <span style={styles.chipLabel}>{label}</span>
-            <span style={styles.chipValue}>{value}</span>
+          <div key={label} style={s.chip}>
+            <span style={s.chipLabel}>{label}</span>
+            <span style={s.chipValue}>{value}</span>
           </div>
         ))}
       </div>
@@ -59,9 +49,12 @@ function MockCard() {
   );
 }
 
+function Label({ children, dark }) {
+  return <span style={{ ...s.label, ...(dark ? { color: "var(--sage)" } : {}) }}>{children}</span>;
+}
+
 export default function Home() {
   const reduce = useReducedMotion();
-  // Sequential hero entrance on load.
   const seq = (delay, x = 0) =>
     reduce
       ? {}
@@ -73,67 +66,134 @@ export default function Home() {
 
   return (
     <div>
-      {/* Hero — full viewport, split layout */}
-      <section className="home-hero" style={styles.hero}>
-        <div className="home-hero-grid" style={styles.heroGrid}>
-          <div style={styles.heroLeft}>
-            <motion.h1 className="home-headline" style={styles.headline} {...seq(0.05)}>
+      {/* SECTION 1 — Hero (sand) */}
+      <section className="home-hero" style={s.hero}>
+        <div className="home-hero-grid" style={s.heroGrid}>
+          <div style={s.heroLeft}>
+            <motion.h1 className="home-headline" style={s.headline} {...seq(0.05)}>
               Fintech intelligence
               <br />
               before the earnings call.
             </motion.h1>
-            <motion.p style={styles.sub} {...seq(0.22)}>
+            <motion.p style={s.heroSub} {...seq(0.22)}>
               Prism monitors five alternative-data signals across leading fintech
               companies and uses AI to turn them into readable research.
             </motion.p>
             <motion.div {...seq(0.4)}>
-              <Link to="/dashboard" className="home-launch" style={styles.cta}>
+              <Link to="/dashboard" className="home-launch" style={s.cta}>
                 Launch dashboard
               </Link>
             </motion.div>
           </div>
-
-          <motion.div style={styles.heroRight} {...seq(0.28, 48)}>
+          <motion.div style={s.heroRight} {...seq(0.28, 48)}>
             <MockCard />
           </motion.div>
         </div>
       </section>
 
-      {/* How it works — dramatic dark band */}
-      <section style={styles.darkSection}>
-        <div style={styles.inner}>
-          <Reveal>
-            <SectionLabel dark>How it works</SectionLabel>
-            <h2 style={{ ...styles.sectionTitle, color: "var(--bg)" }}>
-              From signal to brief, every morning.
+      {/* SECTION 2 — The problem (dark) */}
+      <section style={{ ...s.section, ...s.dark, textAlign: "center" }}>
+        <div style={{ ...s.inner, maxWidth: "880px" }}>
+          <Reveal><Label dark>The problem</Label></Reveal>
+          <Reveal y={40} duration={0.8} delay={0.05}>
+            <h2 style={{ ...s.statement, color: "var(--bg)" }}>
+              By the time earnings are public, the story is already old.
             </h2>
           </Reveal>
-          <RevealGroup className="steps-grid" style={styles.steps}>
-            {STEPS.map((s) => (
-              <RevealChild key={s.n} style={styles.step}>
-                <span style={styles.stepN}>{s.n}</span>
-                <h3 style={styles.stepTitle}>{s.title}</h3>
-                <p style={styles.stepBody}>{s.body}</p>
+          <Reveal delay={0.2}>
+            <p style={s.statementSub}>
+              Markets move on information most people can't see yet.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* SECTION 3 — Collect (sand) */}
+      <section style={s.section}>
+        <div className="story-grid" style={{ ...s.inner, ...s.grid2 }}>
+          <div>
+            <Reveal><Label>Collect</Label></Reveal>
+            <Reveal y={40} duration={0.8} delay={0.05}>
+              <h2 style={s.headline2}>Five signals. Every morning.</h2>
+            </Reveal>
+            <Reveal delay={0.2}>
+              <p style={s.body}>
+                Before the market opens, Prism gathers alternative data from five
+                independent sources — the early, scattered traces of where a
+                company is really heading. Each is normalized, scored, and ready
+                to read.
+              </p>
+            </Reveal>
+          </div>
+          <RevealGroup as="ul" style={s.signalList} amount={0.3}>
+            {SIGNALS.map((sig) => (
+              <RevealChild as="li" key={sig} style={s.signalItem}>
+                <span style={s.signalDot} />
+                {sig}
               </RevealChild>
             ))}
           </RevealGroup>
         </div>
       </section>
 
-      {/* What we track — staggered card grid */}
-      <section style={styles.trackSection}>
-        <div style={styles.inner}>
-          <Reveal>
-            <SectionLabel>What we track</SectionLabel>
-            <h2 style={styles.sectionTitle}>Five signals, one read.</h2>
+      {/* SECTION 4 — Detect (dark) */}
+      <section style={{ ...s.section, ...s.dark }}>
+        <div style={s.inner}>
+          <Reveal><Label dark>Detect</Label></Reveal>
+          <Reveal y={40} duration={0.8} delay={0.05}>
+            <h2 style={{ ...s.headline2, color: "var(--bg)", maxWidth: "680px" }}>
+              Anomalies, the moment they emerge.
+            </h2>
           </Reveal>
-          <RevealGroup className="track-grid" style={styles.trackGrid}>
-            {TRACKED.map(([name, desc]) => (
-              <RevealChild key={name} className="track-card" style={styles.trackCard}>
-                <span style={styles.trackDot} />
+          <Reveal delay={0.2}>
+            <p style={{ ...s.body, color: "rgba(231,220,203,0.72)", maxWidth: "560px" }}>
+              Every signal is measured against its own recent history. When
+              something breaks from the pattern, Prism flags it automatically —
+              no waiting for the quarterly report.
+            </p>
+          </Reveal>
+          <Reveal delay={0.32} style={s.statBlock}>
+            <div style={s.statNumber}>
+              <CountUp value={112} />
+            </div>
+            <div style={s.statCaption}>anomalies detected in the first 48 hours</div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* SECTION 5 — Synthesize (sand) */}
+      <section style={s.section}>
+        <div style={{ ...s.inner, maxWidth: "900px" }}>
+          <Reveal><Label>Synthesize</Label></Reveal>
+          <Reveal y={40} duration={0.8} delay={0.05}>
+            <h2 style={s.headline2}>AI that takes a position.</h2>
+          </Reveal>
+          <Reveal delay={0.2} style={s.quoteWrap}>
+            <blockquote style={s.quote}>
+              "Elevated search interest and insider activity suggest near-term
+              upside despite recent pullback."
+            </blockquote>
+            <cite style={s.quoteCite}>— Prism research brief, Robinhood</cite>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* SECTION 6 — What we track (sand) */}
+      <section style={s.section}>
+        <div style={s.inner}>
+          <Reveal><Label>What we track</Label></Reveal>
+          <Reveal y={40} duration={0.8} delay={0.05}>
+            <h2 style={{ ...s.headline2, marginBottom: "8px" }}>
+              Five fintechs, watched daily.
+            </h2>
+          </Reveal>
+          <RevealGroup className="company-grid" style={s.companyGrid} amount={0.2}>
+            {COMPANIES.map(([name, ticker]) => (
+              <RevealChild key={ticker} className="track-card" style={s.companyCard}>
+                <span style={s.companyDot} />
                 <div>
-                  <h3 style={styles.trackName}>{name}</h3>
-                  <p style={styles.trackDesc}>{desc}</p>
+                  <div style={s.companyName}>{name}</div>
+                  <div style={s.companyTicker}>{ticker}</div>
                 </div>
               </RevealChild>
             ))}
@@ -141,30 +201,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Closing CTA */}
-      <section style={styles.ctaSection}>
-        <div style={styles.inner}>
-          <Reveal>
-            <div style={styles.ctaInner}>
-              <SectionLabel>Get started</SectionLabel>
-              <h2 style={styles.ctaTitle}>See what the signals say today.</h2>
-              <Link to="/dashboard" className="home-launch" style={styles.cta}>
-                Launch dashboard
-              </Link>
-            </div>
+      {/* SECTION 7 — Closing CTA (dark) */}
+      <section style={{ ...s.section, ...s.dark, textAlign: "center" }}>
+        <div style={{ ...s.inner, maxWidth: "760px" }}>
+          <Reveal><Label dark>Get started</Label></Reveal>
+          <Reveal y={40} duration={0.8} delay={0.05}>
+            <h2 style={{ ...s.statement, color: "var(--bg)" }}>
+              See what the signals say today.
+            </h2>
+          </Reveal>
+          <Reveal delay={0.25}>
+            <Link to="/dashboard" className="home-launch" style={{ ...s.cta, ...s.ctaLarge }}>
+              Launch dashboard
+            </Link>
           </Reveal>
         </div>
       </section>
 
-      <div style={styles.inner}>
+      <div style={s.inner}>
         <Footer />
       </div>
     </div>
   );
 }
 
-const styles = {
-  inner: { maxWidth: "1200px", margin: "0 auto", padding: "0 40px" },
+const s = {
+  inner: { maxWidth: "1100px", margin: "0 auto", padding: "0 40px", width: "100%" },
+
+  // Full-height story section
+  section: {
+    minHeight: "90vh",
+    display: "flex",
+    alignItems: "center",
+    padding: "120px 0",
+  },
+  dark: { background: "var(--ink)" },
+  grid2: {
+    display: "grid",
+    gridTemplateColumns: "1.1fr 0.9fr",
+    gap: "80px",
+    alignItems: "center",
+  },
 
   // ---- Hero ----
   hero: { minHeight: "calc(100vh - 73px)", display: "flex", alignItems: "center" },
@@ -187,7 +264,7 @@ const styles = {
     letterSpacing: "-0.025em",
     color: "var(--ink)",
   },
-  sub: {
+  heroSub: {
     fontSize: "18px",
     lineHeight: 1.6,
     color: "var(--muted)",
@@ -205,6 +282,7 @@ const styles = {
     padding: "16px 34px",
     borderRadius: "10px",
   },
+  ctaLarge: { fontSize: "16px", padding: "18px 40px", marginTop: "36px" },
 
   // ---- Hero mock card ----
   heroRight: { display: "flex", justifyContent: "center" },
@@ -273,103 +351,143 @@ const styles = {
   },
   chipValue: { fontFamily: "var(--serif)", fontSize: "18px", color: "var(--bg)" },
 
-  // ---- Section typography ----
+  // ---- Shared type ----
   label: {
     fontSize: "11px",
     fontWeight: 600,
-    letterSpacing: "0.16em",
+    letterSpacing: "0.18em",
     textTransform: "uppercase",
     color: "var(--sage)",
+    display: "block",
   },
-  labelDark: { color: "var(--sage)" },
-  sectionTitle: {
+  // Big dramatic centered statement (problem / closing)
+  statement: {
     fontFamily: "var(--serif)",
-    fontSize: "38px",
+    fontSize: "52px",
     fontWeight: 400,
-    letterSpacing: "-0.02em",
-    lineHeight: 1.1,
+    lineHeight: 1.12,
+    letterSpacing: "-0.025em",
     color: "var(--ink)",
+    marginTop: "24px",
+  },
+  statementSub: {
+    fontSize: "19px",
+    lineHeight: 1.6,
+    color: "rgba(231, 220, 203, 0.66)",
+    marginTop: "28px",
+  },
+  // Section headline (left-aligned chapters)
+  headline2: {
+    fontFamily: "var(--serif)",
+    fontSize: "44px",
+    fontWeight: 400,
+    lineHeight: 1.1,
+    letterSpacing: "-0.025em",
+    color: "var(--ink)",
+    marginTop: "18px",
+  },
+  body: {
+    fontSize: "17px",
+    lineHeight: 1.7,
+    color: "var(--muted)",
+    marginTop: "24px",
+    maxWidth: "440px",
+  },
+
+  // ---- Collect signal list ----
+  signalList: { listStyle: "none", margin: 0, padding: 0 },
+  signalItem: {
+    fontFamily: "var(--serif)",
+    fontSize: "30px",
+    fontWeight: 400,
+    color: "var(--ink)",
+    letterSpacing: "-0.01em",
+    padding: "18px 0",
+    borderBottom: "0.5px solid var(--hairline)",
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+  },
+  signalDot: {
+    width: "8px",
+    height: "8px",
+    borderRadius: "50%",
+    background: "var(--sage)",
+    flexShrink: 0,
+  },
+
+  // ---- Detect stat ----
+  statBlock: { marginTop: "56px" },
+  statNumber: {
+    fontFamily: "var(--serif)",
+    fontSize: "84px",
+    fontWeight: 400,
+    lineHeight: 1,
+    letterSpacing: "-0.03em",
+    color: "var(--sage)",
+  },
+  statCaption: {
+    fontSize: "14px",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "rgba(231, 220, 203, 0.6)",
     marginTop: "16px",
   },
 
-  // ---- How it works (dark) ----
-  darkSection: { background: "var(--ink)", padding: "140px 0" },
-  steps: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "48px",
-    marginTop: "56px",
-  },
-  step: {},
-  stepN: {
+  // ---- Synthesize pull-quote ----
+  quoteWrap: { marginTop: "40px", borderLeft: "2px solid var(--sage)", paddingLeft: "32px" },
+  quote: {
     fontFamily: "var(--serif)",
-    fontSize: "60px",
+    fontSize: "40px",
+    fontStyle: "italic",
     fontWeight: 400,
-    lineHeight: 1,
-    color: "var(--sage)",
+    lineHeight: 1.32,
     letterSpacing: "-0.02em",
+    color: "var(--ink)",
+    margin: 0,
   },
-  stepTitle: {
-    fontFamily: "var(--serif)",
-    fontSize: "24px",
-    fontWeight: 400,
-    color: "var(--bg)",
-    marginTop: "20px",
-  },
-  stepBody: {
-    fontSize: "15px",
-    lineHeight: 1.6,
-    color: "rgba(231, 220, 203, 0.7)",
-    marginTop: "12px",
-    maxWidth: "280px",
+  quoteCite: {
+    display: "block",
+    fontStyle: "normal",
+    fontSize: "13px",
+    letterSpacing: "0.04em",
+    color: "var(--faint)",
+    marginTop: "24px",
   },
 
-  // ---- What we track ----
-  trackSection: { padding: "140px 0" },
-  trackGrid: {
+  // ---- Companies grid ----
+  companyGrid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
     gap: "20px",
-    marginTop: "56px",
+    marginTop: "48px",
   },
-  trackCard: {
+  companyCard: {
     display: "flex",
-    gap: "16px",
+    gap: "14px",
+    alignItems: "center",
     background: "var(--surface)",
     border: "0.5px solid var(--hairline)",
     borderRadius: "12px",
-    padding: "28px 30px",
+    padding: "24px 24px",
   },
-  trackDot: {
+  companyDot: {
     width: "9px",
     height: "9px",
     borderRadius: "50%",
     background: "var(--sage)",
     flexShrink: 0,
-    marginTop: "8px",
   },
-  trackName: {
+  companyName: {
     fontFamily: "var(--serif)",
-    fontSize: "20px",
+    fontSize: "21px",
     fontWeight: 400,
     color: "var(--ink)",
   },
-  trackDesc: { fontSize: "14.5px", lineHeight: 1.6, color: "var(--muted)", marginTop: "8px" },
-
-  // ---- Closing CTA ----
-  ctaSection: { padding: "40px 0 140px" },
-  ctaInner: {
-    borderTop: "0.5px solid var(--hairline)",
-    paddingTop: "80px",
-    textAlign: "center",
-  },
-  ctaTitle: {
-    fontFamily: "var(--serif)",
-    fontSize: "44px",
-    fontWeight: 400,
-    letterSpacing: "-0.02em",
-    lineHeight: 1.1,
-    color: "var(--ink)",
-    marginTop: "16px",
+  companyTicker: {
+    fontSize: "11px",
+    letterSpacing: "0.08em",
+    color: "var(--faint)",
+    marginTop: "3px",
   },
 };
