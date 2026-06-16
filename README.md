@@ -1,229 +1,76 @@
 # Prism
 
-AI-powered alternative-data platform for fintech equity research. Prism ingests
-five alt-data sources, normalises and company-tags them, scores sentiment, flags
-anomalies, and serves the result over a query API — all runnable locally with one
-command. Every normalised signal carries a plain-English `summary_text` ready to
-hand straight to the Claude API.
+**Fintech intelligence before the earnings call.**
+
+Prism is an AI-powered alternative-data platform for fintech equity research. It tracks the signals that move a company before they reach the income statement, and turns them into clear, readable research.
+
+---
+
+## What it does
+
+Prism continuously monitors five leading fintech companies — **Robinhood (HOOD)**, **Affirm (AFRM)**, **Block (XYZ)**, **Klarna (KLAR)**, and **Chime (CHYM)** — across five categories of alternative data: social sentiment, hiring activity, search interest, app-store reviews, and SEC filings. Each signal is normalized, scored, and checked against its own recent history. Every morning, Claude synthesizes the day's signals for each company into a plain-English research brief — the kind of intelligence that used to require a Bloomberg terminal and a team of analysts.
+
+---
+
+## Features
+
+- **Daily research briefs** — AI-synthesized, plain-English summaries of each company's signals, generated every morning.
+- **Anomaly detection** — automatic flagging when a signal breaks more than 1σ from its trailing rolling average.
+- **30-day historical charts** — per-signal time series so you can see trends, not just snapshots.
+- **Signal correlation** — surfaces when multiple signals move the same direction for a stronger combined read.
+- **Company comparison** — any two companies side by side, with an AI verdict on which looks stronger this week.
+- **Email alerts** — digests of newly detected anomalies.
+- **Earnings calendar** — the next scheduled earnings date per company, found via web search and cached.
+- **Real-time AI chat** — ask questions about any company and get answers grounded strictly in Prism's underlying data.
+
+---
 
 ## Architecture
 
-```
-                 ┌──────────────────────────────────────────┐
-   Prefect       │  scrapers (daily cron)                    │
-   schedules ───▶│  sentiment · hiring · trends · reviews ·  │
-                 │  sec_edgar                                │
-                 └─────────────────┬────────────────────────┘
-                                   │ RawEvent (JSON)
-                                   ▼
-                         Redis Stream  prism:raw
-                                   │  consumer group
-                                   ▼
-                 ┌──────────────────────────────────────────────────┐
-                 │  normaliser worker(s)                             │
-                 │  dedup → UTC → company tag → sentiment →          │
-                 │  summary_text → Signal → anomaly check →          │
-                 │  multi-model score (Claude + GPT-4o)              │
-                 └─────────────────┬────────────────────────────────┘
-                                   ▼
-            Postgres:  raw_events · signals · alerts · company_briefs
-                          ▲                    ▲
-   Prefect 07:30 ─────────┘                    │
-   daily brief:  Claude synthesis              │
-   (last-24h signals → brief)        FastAPI ──┘  GET /signals /alerts /brief
-```
+Prism is a two-tier system: a Python data-and-AI backend and a React frontend.
 
-- **Scrapers** only *fetch and emit* `RawEvent`s onto Redis. No DB access.
-- **Redis Streams** is the durable message queue (at-least-once via a consumer
-  group, so the normaliser scales horizontally).
-- **Normaliser** owns all enrichment: two-layer dedup (Redis set + a unique
-  `dedup_hash` in Postgres), UTC normalisation, company entity tagging, sentiment
-  scoring, `summary_text` generation, inline anomaly detection, and inline
-  multi-model scoring.
-- **Anomaly detection** runs on each stored signal: if a company's sentiment
-  moves more than 1σ from its trailing 7-day rolling average, a row is written to
-  `alerts` (`prism/normaliser/anomaly.py`).
-- **Multi-model scoring** (`prism/ai/scoring.py`): for text-bearing signals,
-  Claude (nuanced sentiment + regulatory read) and GPT-4o (fast structured
-  score) each score the signal; both — plus a >0.3 disagreement flag — land in
-  `signals.model_scores`. Runs **off the ingestion hot path** in the dedicated
-  `scorer` service (`scoring_mode=worker`) so the normaliser drains fast, with a
-  **per-model circuit breaker** so a throttled/out-of-quota key can't stall it.
-- **Claude synthesis** (`prism/ai/synthesis.py`): a Prefect deployment runs at
-  07:30 daily (after the scrapers), batches each company's last-24h signals,
-  and has Claude write a structured research brief into `company_briefs`. Uses
-  prompt caching on the static instruction prefix.
-- **FastAPI** serves `/signals`, `/alerts`, and `/brief` over the tables.
-- **Prefect** schedules each scraper on a staggered daily cron.
+**Backend**
+- **Scrapers** fetch raw data from five sources and emit events onto a **Redis** stream.
+- A **normaliser** worker consumes the stream: deduplication, UTC normalization, company tagging, sentiment scoring, plain-English summary generation, and inline anomaly detection.
+- Cleaned **signals**, **alerts**, **briefs**, and **earnings** persist in **Postgres**.
+- **Prefect** orchestrates the daily scrape-and-synthesize schedule.
+- **FastAPI** serves the query API (`/signals`, `/alerts`, `/brief`, `/series`, `/correlation`, `/earnings`, `/chat`).
+- Everything runs locally via **Docker Compose**.
 
-### Company universe
-Robinhood (HOOD), Affirm (AFRM), Block (XYZ), Klarna (KLAR), Chime (CHYM).
-Defined once in `prism/common/companies.py`.
+**AI layer**
+- The **Claude API** powers daily brief synthesis, the data-grounded chat endpoint, the comparison verdict, and earnings-date web search. Static instructions use prompt caching.
+- **Multi-model scoring** runs each text signal through more than one model and records their agreement, with a **circuit breaker** that degrades gracefully when a provider is unavailable.
 
-## Sources
+**Frontend**
+- **React + Vite**, with an editorial design system, Recharts visualizations, framer-motion scroll animations, and a floating chat launcher.
+- A marketing home page, a live dashboard, a company-comparison view, and an about page.
 
-| Scraper        | Sources                | Access                                       |
-|----------------|------------------------|----------------------------------------------|
-| `sentiment`    | Reddit, StockTwits     | **Live** — Reddit OAuth (PRAW); StockTwits   |
-| `hiring`       | LinkedIn, Indeed       | **Live** — SerpApi Google Jobs (`SERPAPI_KEY`)|
-| `google_trends`| Google Trends          | **Live** — `pytrends`, no key                |
-| `app_reviews`  | App Store / Play Store | App Store **live** (RSS); Play **stubbed**   |
-| `sec_edgar`    | SEC EDGAR filings      | **Live** — public (contact email in UA)      |
+---
 
-Each scraper falls back to deterministic **sample data** when its credentials are
-absent, so the whole pipeline runs with zero keys configured.
+## The five signals
 
-## Frontend dashboard
+| Signal | What it measures | Source |
+|---|---|---|
+| **Social sentiment** | Retail/social chatter about a company, scored for tone | Reddit, StockTwits |
+| **Hiring activity** | Open job postings as a read on growth and focus | LinkedIn / Indeed (via SerpApi) |
+| **Search interest** | Public attention, indexed 0–100 against the company's own recent peak | Google Trends |
+| **App reviews** | Product health from new ratings and review sentiment | Apple App Store, Google Play |
+| **SEC filings** | Material regulatory activity (10-K, 10-Q, 8-K, S-1) | SEC EDGAR |
 
-A React dashboard lives in `frontend/`. It connects to the FastAPI backend at
-`localhost:8000` and shows live signal cards, anomaly alerts, and the daily
-research brief for each company.
+---
 
-```bash
-cd frontend
-npm install
-npm run dev        # → http://localhost:5173
-```
+## Tech stack
 
-Requires Node 18+. The Vite dev server proxies all `/api/*` requests to
-`localhost:8000`, so start the backend first (`docker compose up -d` or
-`uvicorn prism.api.main:app --reload --port 8000`). The dashboard renders
-clearly-labelled mock data if the API is unreachable.
+**Backend** · Python · FastAPI · PostgreSQL · Redis · Prefect · Docker
 
-## Quick start
+**AI** · Claude API · multi-model scoring with circuit breaker · prompt caching
 
-```bash
-cp .env.example .env          # optional: add SERPAPI_KEY, Reddit creds, etc.
-docker compose up -d --build  # postgres, redis, prefect, normaliser, api
-```
+**Frontend** · React · Vite · React Router · Recharts · Framer Motion
 
-Trigger a scraper immediately (instead of waiting for the daily cron):
+**Data sources** · Reddit · StockTwits · Google Trends · SerpApi · App Store / Google Play · SEC EDGAR
 
-```bash
-docker compose exec prefect-worker python -m prism.flows.dag run sentiment
-docker compose exec prefect-worker python -m prism.flows.dag run all   # all five
-```
+---
 
-Query the data:
+## Disclaimer
 
-```bash
-# Via the API (http://localhost:8000/docs for interactive docs):
-curl 'http://localhost:8000/signals?company=HOOD&type=sentiment&days=7'
-curl 'http://localhost:8000/alerts?company=HOOD'
-curl 'http://localhost:8000/brief?company=HOOD'
-
-# Generate today's briefs on demand (needs ANTHROPIC_API_KEY):
-docker compose exec prefect-worker python -m prism.flows.dag run brief
-
-# Or straight from Postgres:
-docker compose exec postgres psql -U prism -c \
-  "SELECT company, category, count(*), round(avg(sentiment)::numeric,2) AS sent
-   FROM signals GROUP BY 1,2 ORDER BY 1,2;"
-```
-
-UIs: Prefect <http://localhost:4200> · API docs <http://localhost:8000/docs>.
-
-## Query API
-
-`GET /signals` — normalised signals, filterable:
-
-| Param     | Example       | Notes                                   |
-|-----------|---------------|-----------------------------------------|
-| `company` | `HOOD`        | ticker **or** canonical name (Robinhood)|
-| `type`    | `sentiment`   | sentiment·hiring·trends·reviews·filings |
-| `days`    | `7`           | trailing window (1–90)                   |
-| `limit`   | `200`         | max rows (1–1000)                        |
-
-`GET /alerts?company=HOOD` — anomaly flags. `GET /brief?company=HOOD` — the
-latest AI-generated research brief. `POST /chat` `{question, company}` — streams
-a data-grounded Claude answer. `GET /companies`, `GET /healthz` for metadata. If
-Postgres is unreachable the API returns clearly-labelled mock data
-(`"source": "mock"`) so it can be demoed standalone.
-
-### Security (`prism/api/security.py`)
-- **Per-IP rate limiting** (Redis-backed fixed window) on all data/chat routes —
-  `RATE_LIMIT_PER_MINUTE` (default 60), with a stricter `CHAT_RATE_LIMIT_PER_MINUTE`
-  (default 10) on the LLM-backed `/chat` so it can't be spammed to burn Claude
-  credits. Fails open if Redis is down. `/healthz` is unprotected.
-- **Optional API key** — set `PRISM_API_KEY` to require an `X-API-Key` header on
-  every data/chat route (off by default). Since a public SPA exposes its key,
-  rate limiting is the primary abuse protection; the key gates non-browser access.
-
-## AI layer (Phase 2)
-
-Both AI paths are **off unless keys are set** (`ANTHROPIC_API_KEY`,
-`OPENAI_API_KEY`); the rest of the pipeline runs unaffected.
-
-- **Daily brief** — `prism/ai/synthesis.py` batches each company's last-24h
-  signals and has Claude (`CLAUDE_MODEL`, default `claude-sonnet-4-20250514`)
-  write a 5-section research brief (sentiment · hiring · search · app store ·
-  regulatory) into `company_briefs`. Static instructions are prompt-cached.
-  > `claude-sonnet-4-20250514` is Sonnet 4.0, **deprecated (retires 2026-06-15)**
-  > — set `CLAUDE_MODEL=claude-sonnet-4-6` to use the current Sonnet.
-- **Multi-model scoring** — `prism/ai/scoring.py` scores text-bearing signals
-  with Claude + GPT-4o; `model_scores` records both plus a `divergence` flag
-  when their sentiment reads differ by more than `MODEL_DIVERGENCE_THRESHOLD`
-  (0.3). `SCORING_MODE` controls where it runs: **`worker`** (default — the
-  `scorer` service scores off the hot path, so ingestion stays fast), `inline`
-  (normaliser scores as it ingests), or `off`. A per-model circuit breaker
-  (`SCORING_BREAKER_*`) pauses a model after consecutive failures (e.g. a
-  throttled key) so it can't stall scoring. Set `ENABLE_MODEL_SCORING=false` to
-  disable entirely.
-
-## Local (no Docker)
-
-```bash
-pip install -e .
-python -m prism.common.migrate                    # create/upgrade schema
-# point at local redis/postgres (see .env), then in separate terminals:
-python -m prism.normaliser.worker                 # consumer
-python -m prism.flows.dag run all                 # produce
-python -m prism.flows.dag run brief               # generate briefs (needs key)
-uvicorn prism.api.main:app --reload --port 8000   # API
-```
-
-## Migrations
-
-`sql/init.sql` is idempotent (`CREATE … IF NOT EXISTS`, `ADD COLUMN IF NOT
-EXISTS`) and runs automatically on a fresh Postgres volume. For an **existing**
-database, `python -m prism.common.migrate` (re-)applies it — adding the Phase 2
-`company_briefs` table and `model_scores` column **without dropping data**. In
-Docker this runs as a one-shot `migrate` service the workers wait on.
-
-## Layout
-
-```
-prism/
-  common/      config, schemas, redis + db clients, company registry, migrate
-  scrapers/    base + five source scrapers (SerpApi hiring; Play stub)
-  normaliser/  worker loop, dedup, timestamps, sentiment, summaries, anomaly
-  ai/          claude_client, openai_client, scoring (multi-model), synthesis
-  api/         FastAPI query layer (/signals, /alerts, /brief)
-  flows/       Prefect flows & daily deployments (incl. 07:30 brief)
-sql/init.sql   raw_events · signals (+ summary_text, model_scores) ·
-               alerts · company_briefs (+ rollup view)
-docker/        shared image
-docker-compose.yml
-```
-
-## Tests
-
-```bash
-pip install -e ".[dev]"
-pytest          # 23 tests; AI paths are gated off when keys are absent
-```
-
-## Notes & Phase 3 hooks
-- **`summary_text`** is built deterministically in `normaliser/summaries.py`;
-  it's the Claude-ready unit. Swap in an LLM-written summary behind the same
-  `build()` signature without touching the schema.
-- **Inline scoring vs. batch.** Multi-model scoring runs synchronously in the
-  normaliser for simplicity; for high throughput, move it to the Batch APIs
-  (50% cheaper) or a separate worker behind the same `scoring.score()` call.
-- **Sentiment** is a lexicon + source-signal blend (`normaliser/sentiment.py`);
-  swap in a model behind the same `score()` signature.
-- **Anomaly** window/threshold (`ROLLING_WINDOW_DAYS`, `STDDEV_THRESHOLD`,
-  `MIN_SAMPLES`) live at the top of `normaliser/anomaly.py`.
-- **Google Play** reviews are stubbed; replace the body of
-  `AppReviewsScraper._fetch_play()` with a provider call to go live.
-- `daily_company_signals` view gives an immediate per-company rollup.
+Prism is a University of Michigan student project. For research and educational purposes only; not investment advice.
