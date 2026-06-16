@@ -58,14 +58,20 @@ export default function About() {
 
 const styles = {
   column: {
-    maxWidth: "1440px",
+    maxWidth: "1200px",
     margin: "0 auto",
-    padding: "0 56px 80px",
+    padding: "0 40px 80px",
   },
+  // An elevated reading panel — the editorial content lifted off the canvas,
+  // with a comfortable ~600px measure inside generous padding.
   article: {
-    maxWidth: "640px",
-    margin: "0 auto",
-    paddingTop: "96px",
+    maxWidth: "760px",
+    margin: "72px auto 0",
+    padding: "60px 72px",
+    background: "var(--paper-raised)",
+    border: "0.5px solid var(--hairline)",
+    borderRadius: "12px",
+    boxShadow: "var(--shadow-card)",
   },
   title: {
     fontFamily: "var(--serif)",

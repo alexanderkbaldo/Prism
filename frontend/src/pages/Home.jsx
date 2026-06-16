@@ -75,20 +75,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* A look inside */}
+      {/* A look inside — the elevated product-preview panel. */}
       <section style={styles.section}>
-        <div style={styles.sectionHead}>
-          <SectionLabel>A look inside</SectionLabel>
-          <span style={styles.previewMeta}>Robinhood · last 7 days</span>
+        <div style={styles.previewCard}>
+          <div style={styles.sectionHead}>
+            <SectionLabel>A look inside</SectionLabel>
+            <span style={styles.previewMeta}>Robinhood · last 7 days</span>
+          </div>
+          <h2 style={styles.previewName}>Robinhood</h2>
+          <Verdict ticker="HOOD" />
+          <PreviewRead ticker="HOOD" />
+          <StatRow ticker="HOOD" />
+          <Link to="/dashboard" style={styles.previewLink}>See the full brief →</Link>
         </div>
-        <h2 style={styles.previewName}>Robinhood</h2>
-        <Verdict ticker="HOOD" />
-        <PreviewRead ticker="HOOD" />
-        <StatRow ticker="HOOD" />
-        <Link to="/dashboard" style={styles.previewLink}>See the full brief →</Link>
       </section>
 
-      {/* How it works */}
+      {/* How it works — three KPI-style cards lifting off the canvas. */}
       <section style={styles.section}>
         <SectionLabel>How it works</SectionLabel>
         <div style={styles.steps}>
@@ -102,12 +104,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* What we track */}
+      {/* What we track — a paper panel holding the list. */}
       <section style={styles.section}>
         <SectionLabel>What we track</SectionLabel>
         <ul style={styles.tracked}>
-          {TRACKED.map(([name, desc]) => (
-            <li key={name} style={styles.trackedRow}>
+          {TRACKED.map(([name, desc], i) => (
+            <li
+              key={name}
+              style={{ ...styles.trackedRow, ...(i === TRACKED.length - 1 ? styles.trackedRowLast : {}) }}
+            >
               <span style={styles.trackedName}>{name}</span>
               <span style={styles.trackedDesc}>{desc}</span>
             </li>
@@ -122,14 +127,14 @@ export default function Home() {
 
 const styles = {
   column: {
-    maxWidth: "1440px",
+    maxWidth: "1200px",
     margin: "0 auto",
-    padding: "0 56px 80px",
+    padding: "0 40px 80px",
   },
   hero: {
     position: "relative",
-    paddingTop: "160px",
-    paddingBottom: "150px",
+    paddingTop: "150px",
+    paddingBottom: "96px",
     maxWidth: "720px",
     marginLeft: "auto",
     marginRight: "auto",
@@ -176,10 +181,17 @@ const styles = {
     borderRadius: "8px",
   },
 
+  // Seamless flow with generous breathing room rather than divider bands —
+  // separation now comes from the cards lifting off the canvas.
   section: {
-    paddingTop: "72px",
-    borderTop: "0.5px solid var(--hairline)",
-    marginTop: "8px",
+    marginTop: "72px",
+  },
+  previewCard: {
+    background: "var(--paper-raised)",
+    border: "0.5px solid var(--hairline)",
+    borderRadius: "12px",
+    boxShadow: "var(--shadow-card)",
+    padding: "36px 40px",
   },
   sectionHead: {
     display: "flex",
@@ -225,10 +237,16 @@ const styles = {
   steps: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "40px",
-    marginTop: "32px",
+    gap: "20px",
+    marginTop: "24px",
   },
-  step: { paddingRight: "20px" },
+  step: {
+    background: "var(--paper)",
+    border: "0.5px solid var(--hairline)",
+    borderRadius: "10px",
+    boxShadow: "var(--shadow-card)",
+    padding: "28px 28px 30px",
+  },
   stepN: {
     fontFamily: "var(--serif)",
     fontSize: "18px",
@@ -257,15 +275,20 @@ const styles = {
 
   tracked: {
     listStyle: "none",
-    marginTop: "28px",
-    maxWidth: "720px",
+    marginTop: "24px",
+    background: "var(--paper)",
+    border: "0.5px solid var(--hairline)",
+    borderRadius: "10px",
+    boxShadow: "var(--shadow-card)",
+    padding: "8px 32px",
   },
   trackedRow: {
     display: "flex",
     gap: "32px",
-    padding: "16px 0",
+    padding: "18px 0",
     borderBottom: "0.5px solid var(--hairline)",
   },
+  trackedRowLast: { borderBottom: "none" },
   trackedName: {
     fontFamily: "var(--serif)",
     fontSize: "17px",
