@@ -1,5 +1,7 @@
 import React from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useCorrelation } from "../hooks/useApi";
+import { EASE } from "../anim";
 
 const DIR = {
   bullish: { color: "var(--up)", arrow: "↑", word: "Up" },
@@ -9,6 +11,7 @@ const DIR = {
 
 export default function SignalCorrelation({ ticker }) {
   const { data } = useCorrelation(ticker);
+  const reduce = useReducedMotion();
   if (!data) return null;
 
   const { insight, aligned, signals = [] } = data;
@@ -28,19 +31,37 @@ export default function SignalCorrelation({ ticker }) {
       </p>
 
       {signals.length > 0 && (
-        <div style={styles.row}>
+        <motion.div
+          style={styles.row}
+          variants={reduce ? undefined : { show: { transition: { staggerChildren: 0.08 } } }}
+          initial={reduce ? false : "hidden"}
+          whileInView={reduce ? undefined : "show"}
+          viewport={{ once: true, amount: 0.4 }}
+        >
           {signals.map((s) => {
             const d = DIR[s.direction] || DIR.neutral;
             return (
-              <div key={s.category} style={styles.chip} title={s.detail}>
+              <motion.div
+                key={s.category}
+                style={styles.chip}
+                title={s.detail}
+                variants={
+                  reduce
+                    ? undefined
+                    : {
+                        hidden: { opacity: 0, x: -12 },
+                        show: { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE } },
+                      }
+                }
+              >
                 <span style={styles.chipLabel}>{s.label}</span>
                 <span style={{ ...styles.chipDir, color: d.color }}>
                   {d.arrow} {d.word}
                 </span>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
     </section>
   );

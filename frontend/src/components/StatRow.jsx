@@ -1,6 +1,7 @@
 import React from "react";
 import { useSeries } from "../hooks/useApi";
 import InfoTip from "./InfoTip";
+import { CountUp } from "../anim";
 
 // Display order + human labels for each signal category.
 // `metric: "count"` → headline is volume; `metric: "index"` → headline is the
@@ -150,7 +151,7 @@ export default function StatRow({ ticker, variant = "row" }) {
               <InfoTip text={stat.info} label={stat.label} />
             </span>
             <span style={{ ...styles.number, ...(isEmpty ? styles.numberEmpty : {}) }}>
-              {headline}
+              <CountUp value={headline} />
               {isIndex && headline !== "—" && <span style={styles.denom}>/100</span>}
             </span>
             <span style={styles.unit}>{stat.unit}</span>

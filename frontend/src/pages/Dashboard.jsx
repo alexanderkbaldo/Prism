@@ -8,6 +8,7 @@ import EarningsLine from "../components/EarningsLine";
 import Verdict from "../components/Verdict";
 import PeerStanding from "../components/PeerStanding";
 import Footer from "../components/Footer";
+import { Reveal } from "../anim";
 import { useBrief, useSignals } from "../hooks/useApi";
 import { extractRead } from "../utils/brief";
 
@@ -83,13 +84,13 @@ export default function Dashboard({ ticker, onTickerChange }) {
 
       <Hero ticker={ticker} />
       <LastUpdated ticker={ticker} />
-      <StatRow ticker={ticker} variant="cards" />
+      <Reveal><StatRow ticker={ticker} variant="cards" /></Reveal>
       {/* Plain-English read per signal, each paired with its chart. */}
-      <div style={styles.briefWrap}>
+      <Reveal style={styles.briefWrap}>
         <SignalReport ticker={ticker} />
-      </div>
-      <SignalCorrelation ticker={ticker} />
-      <AnomalyLine ticker={ticker} />
+      </Reveal>
+      <Reveal><SignalCorrelation ticker={ticker} /></Reveal>
+      <Reveal><AnomalyLine ticker={ticker} /></Reveal>
 
       <Footer />
     </div>

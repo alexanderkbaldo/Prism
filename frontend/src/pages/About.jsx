@@ -1,55 +1,56 @@
 import React from "react";
 import Footer from "../components/Footer";
+import { RevealGroup, RevealChild } from "../anim";
 
 export default function About() {
   return (
     <div className="page" style={styles.column}>
-      <article style={styles.article}>
-        <span className="eyebrow">About</span>
-        <h1 style={styles.title}>About Prism</h1>
+      <RevealGroup as="article" style={styles.article} amount={0.1}>
+        <RevealChild as="span" className="eyebrow">About</RevealChild>
+        <RevealChild as="h1" style={styles.title}>About Prism</RevealChild>
 
-        <p style={styles.lede}>
+        <RevealChild as="p" style={styles.lede}>
           Prism started with a simple frustration: by the time a company's
           earnings report comes out, the story is already old.
-        </p>
+        </RevealChild>
 
-        <p style={styles.p}>
+        <RevealChild as="p" style={styles.p}>
           Sophisticated investors have long known that the most valuable signals
           live outside the income statement: in hiring patterns, app store
           reviews, search trends, social sentiment, and regulatory filings. But
           the tools to track those signals have always been locked behind five-
           and six-figure subscriptions, available only to hedge funds and
           institutional desks.
-        </p>
+        </RevealChild>
 
-        <p style={styles.p}>
+        <RevealChild as="p" style={styles.p}>
           We're two economics students at the University of Michigan who thought
           that gap was worth closing. Prism continuously monitors alternative
           data across leading fintech companies and uses AI to synthesize it into
           clear, readable research, the kind of intelligence that used to require
           a Bloomberg terminal and a team of analysts.
-        </p>
+        </RevealChild>
 
-        <h2 style={styles.h2}>The problem we're solving</h2>
-        <p style={styles.p}>
+        <RevealChild as="h2" style={styles.h2}>The problem we're solving</RevealChild>
+        <RevealChild as="p" style={styles.p}>
           Traditional financial research is slow and backward-looking. Earnings
           are quarterly; the world is not. Prism watches the signals that change
           daily, and explains what they mean in plain English.
-        </p>
+        </RevealChild>
 
-        <h2 style={styles.h2}>How we think about it</h2>
-        <p style={styles.p}>
+        <RevealChild as="h2" style={styles.h2}>How we think about it</RevealChild>
+        <RevealChild as="p" style={styles.p}>
           We don't believe in replacing human judgment. Prism surfaces what's
           moving and why, then gets out of the way. Every brief is a starting
           point for analysis, not a verdict. When our models disagree, we show
           you the disagreement.
-        </p>
+        </RevealChild>
 
-        <p style={styles.p}>
+        <RevealChild as="p" style={styles.p}>
           Prism is a research and educational project. It is not investment
           advice.
-        </p>
-      </article>
+        </RevealChild>
+      </RevealGroup>
 
       <Footer />
     </div>
