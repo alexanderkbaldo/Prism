@@ -16,7 +16,7 @@ function decodeEntities(str) {
   return el.value;
 }
 
-// Palette (hex — recharts sets SVG attributes which don't resolve CSS vars).
+// Palette (hex, recharts sets SVG attributes which don't resolve CSS vars).
 const C = { sage: "#6B8F71", ink: "#1A2018", hairline: "#CBBDA8", faint: "#8A7D6B", bg: "#E7DCCB" };
 
 // ---- data helpers -----------------------------------------------------------
@@ -63,7 +63,7 @@ function metricsFor(series, key) {
 function takeaway(key, m) {
   switch (key) {
     case "sentiment": {
-      if (m.count === 0) return { line: "Quiet week — little social chatter.", stat: "0 mentions" };
+      if (m.count === 0) return { line: "Quiet week, little social chatter.", stat: "0 mentions" };
       const tone = m.score >= 60 ? "mostly positive" : m.score != null && m.score < 40 ? "mostly negative" : "mixed";
       return { line: `Social chatter is ${tone}.`, stat: `${m.count} mentions · ${m.score ?? "–"}/100` };
     }
@@ -96,7 +96,7 @@ function takeaway(key, m) {
     }
     case "filings": {
       if (m.count === 0) return { line: "No new SEC filings.", stat: "0 filings" };
-      return { line: `${m.count} new SEC filing${m.count === 1 ? "" : "s"} — worth a look.`, stat: `${m.count} filing${m.count === 1 ? "" : "s"}` };
+      return { line: `${m.count} new SEC filing${m.count === 1 ? "" : "s"}, worth a look.`, stat: `${m.count} filing${m.count === 1 ? "" : "s"}` };
     }
     default:
       return { line: "", stat: "" };
@@ -107,9 +107,9 @@ const SIGNALS = [
   { key: "sentiment", title: "Social sentiment", field: "avg_sentiment", domain: [-1, 1], unit: "",
     note: "What people are saying about the company on Reddit and StockTwits." },
   { key: "hiring", title: "Hiring", field: "count", domain: [0, "auto"], unit: " postings",
-    note: "New job postings — a read on where the company is investing." },
+    note: "New job postings, a read on where the company is investing." },
   { key: "trends", title: "Search interest", field: "avg_interest", domain: [0, 100], unit: "/100",
-    note: "How much people are Googling the company. The 0–100 index is relative to its own recent peak — so it shows attention rising or fading, not a head count." },
+    note: "How much people are Googling the company. The 0–100 index is relative to its own recent peak, so it shows attention rising or fading, not a head count." },
   { key: "reviews", title: "App reviews", field: "avg_sentiment", domain: [-1, 1], unit: "",
     note: "What users are saying in new App Store and Google Play reviews." },
   { key: "filings", title: "SEC filings", field: null, domain: null, unit: "",
@@ -131,7 +131,7 @@ function MiniChart({ points, field, domain, unit }) {
   if (data.length < 3) {
     return (
       <div style={styles.chartEmpty}>
-        {data.length === 0 ? "No data in the last 30 days." : `Building history — ${data.length} day${data.length === 1 ? "" : "s"} so far.`}
+        {data.length === 0 ? "No data in the last 30 days." : `Building history, ${data.length} day${data.length === 1 ? "" : "s"} so far.`}
       </div>
     );
   }
@@ -288,7 +288,7 @@ export default function SignalReport({ ticker }) {
 }
 
 const styles = {
-  // The elevated product panel — the reason you came to the page. A paper card
+  // The elevated product panel, the reason you came to the page. A paper card
   // that lifts off the canvas with a whisper-soft shadow.
   section: {
     background: "var(--paper-raised)",

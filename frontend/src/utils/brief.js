@@ -24,7 +24,7 @@ export function extractBottomLine(text) {
   return { sentence: null, body: text };
 }
 
-// The brief's opening summary — first sentence after the first section heading.
+// The brief's opening summary, first sentence after the first section heading.
 // Distinct from the bottom line, so the two never repeat the same sentence.
 export function extractRead(briefText) {
   if (!briefText) return null;

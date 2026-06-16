@@ -41,7 +41,7 @@ function Hero({ ticker }) {
   );
 }
 
-// "Last updated" — reflects data freshness via the most recent signal timestamp.
+// "Last updated", reflects data freshness via the most recent signal timestamp.
 function LastUpdated({ ticker }) {
   const { data } = useSignals(ticker);
   const signals = data?.signals ?? [];
@@ -65,7 +65,7 @@ function LastUpdated({ ticker }) {
   return (
     <div style={styles.metaRow}>
       {isMock && (
-        <span style={styles.mock} title="The backend is unreachable — showing sample data.">
+        <span style={styles.mock} title="The backend is unreachable, showing sample data.">
           Sample data
         </span>
       )}

@@ -3,13 +3,13 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* Surfaces — elevation comes from gentle warm shifts, not heavy shadows.
+  /* Surfaces, elevation comes from gentle warm shifts, not heavy shadows.
      canvas (sand) → paper card (lighter, lifts off) → raised (lightest). */
-  --bg:            #E7DCCB;  /* warm sand — page canvas (level 0) */
-  --surface:       #DFD3C0;  /* warm gray — inset bands within cards (level 2) */
+  --bg:            #E7DCCB;  /* warm sand, page canvas (level 0) */
+  --surface:       #DFD3C0;  /* warm gray, inset bands within cards (level 2) */
   --hairline:      #CBBDA8;  /* borders / dividers */
-  --paper:         #F1E8D8;  /* card surface — lifts off the sand canvas (level 1) */
-  --paper-raised:  #F7F1E6;  /* elevated panel — the primary read (level 1+) */
+  --paper:         #F1E8D8;  /* card surface, lifts off the sand canvas (level 1) */
+  --paper-raised:  #F7F1E6;  /* elevated panel, the primary read (level 1+) */
   --shadow-card:   0 1px 3px rgba(26, 32, 24, 0.04), 0 4px 12px rgba(26, 32, 24, 0.03);
 
   /* Accent */
@@ -30,7 +30,7 @@
   --serif: "Newsreader", Georgia, "Times New Roman", serif;
   --sans:  "Inter", system-ui, -apple-system, sans-serif;
 
-  /* Spacing scale (4px base) — a single rhythm for padding, gaps, and section
+  /* Spacing scale (4px base), a single rhythm for padding, gaps, and section
      spacing. See frontend/DESIGN_SYSTEM.md. */
   --space-1: 4px;
   --space-2: 8px;
@@ -43,7 +43,7 @@
   --space-9: 96px;
   --space-10: 120px;
 
-  /* Type scale — display uses --serif; UI/body uses --sans. */
+  /* Type scale, display uses --serif; UI/body uses --sans. */
   --text-eyebrow: 10px;   /* uppercase labels */
   --text-caption: 12px;
   --text-body: 16px;
@@ -52,7 +52,7 @@
   --text-h2: 44px;        /* section serif headline */
   --text-display: 64px;   /* hero serif */
 
-  /* Focus ring — visible keyboard affordance, brand-tinted. */
+  /* Focus ring, visible keyboard affordance, brand-tinted. */
   --focus-ring: 0 0 0 3px var(--sage-soft);
 
   /* z-index scale */
@@ -73,7 +73,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Tiny letter-spaced eyebrow label — the only uppercase allowed */
+/* Tiny letter-spaced eyebrow label, the only uppercase allowed */
 .eyebrow {
   font-size: 10px;
   font-weight: 500;
@@ -103,7 +103,7 @@ textarea:focus-visible,
   box-shadow: var(--focus-ring);
 }
 
-/* Skip link — lets keyboard users jump past the nav. Hidden until focused. */
+/* Skip link, lets keyboard users jump past the nav. Hidden until focused. */
 .skip-link {
   position: absolute;
   left: 16px;
@@ -122,12 +122,12 @@ textarea:focus-visible,
 }
 
 /* Company switcher tabs: smooth background wash on hover (skill: data-dense
-   dashboard, tab interactions). Active tab is dark — leave it. */
+   dashboard, tab interactions). Active tab is dark, leave it. */
 .company-tabs button { transition: background 0.15s ease, color 0.15s ease; }
 .company-tabs button:not(.is-active):hover { background: var(--surface) !important; }
 
 /* Nav links: warm sage on hover with a left-anchored underline slide-in.
-   NavLink adds .active to the current route — leave it alone. */
+   NavLink adds .active to the current route, leave it alone. */
 .nav-links a { position: relative; transition: color 0.2s ease; }
 .nav-links a:not(.active):hover { color: var(--sage) !important; }
 .nav-links a::after {

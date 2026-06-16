@@ -51,7 +51,7 @@ export function computeStats(series) {
     const a = agg(series?.[s.key], from, to);
     if (s.metric === "index") {
       const v = a.interest == null ? null : Math.round(a.interest);
-      return { key: s.key, label: s.label, value: v, display: v == null ? "—" : `${v}`, unit: "0–100" };
+      return { key: s.key, label: s.label, value: v, display: v == null ? "-" : `${v}`, unit: "0–100" };
     }
     return { key: s.key, label: s.label, value: a.count, display: `${a.count}`, unit: s.unit };
   });

@@ -66,7 +66,7 @@ export default function Home() {
 
   return (
     <div>
-      {/* SECTION 1 — Hero (sand) */}
+      {/* SECTION 1, Hero (sand) */}
       <section className="home-hero" style={s.hero}>
         <div className="home-hero-grid" style={s.heroGrid}>
           <div style={s.heroLeft}>
@@ -91,7 +91,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 2 — The problem (dark) */}
+      {/* SECTION 2, The problem (dark) */}
       <section style={{ ...s.section, ...s.dark, textAlign: "center" }}>
         <div style={{ ...s.inner, maxWidth: "880px" }}>
           <Reveal><Label dark>The problem</Label></Reveal>
@@ -108,7 +108,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 3 — Collect (sand) */}
+      {/* SECTION 3, Collect (sand) */}
       <section style={s.section}>
         <div className="story-grid" style={{ ...s.inner, ...s.grid2 }}>
           <div>
@@ -119,7 +119,7 @@ export default function Home() {
             <Reveal delay={0.2}>
               <p style={s.body}>
                 Before the market opens, Prism gathers alternative data from five
-                independent sources — the early, scattered traces of where a
+                independent sources, the early, scattered traces of where a
                 company is really heading. Each is normalized, scored, and ready
                 to read.
               </p>
@@ -136,7 +136,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 4 — Detect (dark) */}
+      {/* SECTION 4, Detect (dark) */}
       <section style={{ ...s.section, ...s.dark }}>
         <div style={s.inner}>
           <Reveal><Label dark>Detect</Label></Reveal>
@@ -148,7 +148,7 @@ export default function Home() {
           <Reveal delay={0.2}>
             <p style={{ ...s.body, color: "rgba(231,220,203,0.72)", maxWidth: "560px" }}>
               Every signal is measured against its own recent history. When
-              something breaks from the pattern, Prism flags it automatically —
+              something breaks from the pattern, Prism flags it automatically -
               no waiting for the quarterly report.
             </p>
           </Reveal>
@@ -161,7 +161,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 5 — Synthesize (sand) */}
+      {/* SECTION 5, Synthesize (sand) */}
       <section style={s.section}>
         <div style={{ ...s.inner, maxWidth: "900px" }}>
           <Reveal><Label>Synthesize</Label></Reveal>
@@ -173,12 +173,12 @@ export default function Home() {
               "Elevated search interest and insider activity suggest near-term
               upside despite recent pullback."
             </blockquote>
-            <cite style={s.quoteCite}>— Prism research brief, Robinhood</cite>
+            <cite style={s.quoteCite}>Prism research brief, Robinhood</cite>
           </Reveal>
         </div>
       </section>
 
-      {/* SECTION 6 — What we track (sand) */}
+      {/* SECTION 6, What we track (sand) */}
       <section style={s.section}>
         <div style={s.inner}>
           <Reveal><Label>What we track</Label></Reveal>
@@ -201,7 +201,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 7 — Closing CTA (dark) */}
+      {/* SECTION 7, Closing CTA (dark) */}
       <section style={{ ...s.section, ...s.dark, textAlign: "center" }}>
         <div style={{ ...s.inner, maxWidth: "760px" }}>
           <Reveal><Label dark>Get started</Label></Reveal>

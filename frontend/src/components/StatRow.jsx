@@ -14,7 +14,7 @@ const STATS = [
   },
   {
     key: "hiring", label: "Hiring", unit: "postings", metric: "count",
-    info: "New job postings detected for the company — a read on where it's investing.",
+    info: "New job postings detected for the company, a read on where it's investing.",
   },
   {
     key: "trends", label: "Search interest", unit: "index, 0–100", metric: "index",
@@ -76,7 +76,7 @@ function scoreFrom(avg) {
 }
 
 // Week-over-week change caption. Both volumes and the 0-100 index use an
-// ABSOLUTE change ("↑ 13 vs last wk") rather than a percentage — on small
+// ABSOLUTE change ("↑ 13 vs last wk") rather than a percentage, on small
 // baselines a percentage explodes into nonsense (1 → 62 reads as "6100%").
 function deltaFrom(metric, cur, prior) {
   if (cur == null || prior == null) return null;
@@ -107,7 +107,7 @@ export default function StatRow({ ticker, variant = "row" }) {
 
   return (
     <div>
-      {/* One explicit window for the whole row — and what the deltas compare
+      {/* One explicit window for the whole row, and what the deltas compare
           against, so a reader always knows the period. */}
       <div style={styles.caption}>
         Trailing 7 days<span style={styles.captionDim}> · change vs prior 7 days</span>
@@ -124,13 +124,13 @@ export default function StatRow({ ticker, variant = "row" }) {
         const isLoading = loading && !data;
 
         // A genuine zero (count signals only) is "nothing happened this week",
-        // not missing data — render it calmly so it doesn't look broken.
+        // not missing data, render it calmly so it doesn't look broken.
         const isEmpty = data && !isLoading && !isIndex && cur.count === 0;
         const headline = isLoading
-          ? "—"
+          ? "-"
           : isIndex
           ? cur.interest == null
-            ? "—"
+            ? "-"
             : Math.round(cur.interest)
           : cur.count;
 
@@ -152,14 +152,14 @@ export default function StatRow({ ticker, variant = "row" }) {
             </span>
             <span style={{ ...styles.number, ...(isEmpty ? styles.numberEmpty : {}) }}>
               <CountUp value={headline} />
-              {isIndex && headline !== "—" && <span style={styles.denom}>/100</span>}
+              {isIndex && headline !== "-" && <span style={styles.denom}>/100</span>}
             </span>
             <span style={styles.unit}>{stat.unit}</span>
 
-            {/* Affirmative empty state — "we checked, there were none". */}
+            {/* Affirmative empty state, "we checked, there were none". */}
             {isEmpty && <span style={styles.none}>none this week</span>}
 
-            {/* Week-over-week change — gives the headline number a baseline. */}
+            {/* Week-over-week change, gives the headline number a baseline. */}
             {delta && (
               <span style={{ ...styles.delta, color: delta.color }}>
                 {delta.arrow} {delta.text}

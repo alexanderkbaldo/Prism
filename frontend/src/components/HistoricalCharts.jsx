@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { useSeries } from "../hooks/useApi";
 
-// Palette (hex, not CSS vars — recharts sets SVG attributes which don't resolve
+// Palette (hex, not CSS vars, recharts sets SVG attributes which don't resolve
 // var()). Mirrors src/index.css.
 const C = {
   sage: "#6B8F71",
@@ -38,7 +38,7 @@ function tooltipFormatter(value, _name, { payload }, unit) {
   return [`${v}${unit}`, undefined];
 }
 
-// Faint skeleton for a signal with no data — a dashed baseline plus muted
+// Faint skeleton for a signal with no data, a dashed baseline plus muted
 // "Awaiting data" reads as intentional rather than broken.
 function ChartSkeleton() {
   return (
@@ -63,7 +63,7 @@ function MiniChart({ title, points, field, domain, unit }) {
         <ChartSkeleton />
       ) : data.length < 3 ? (
         <div style={styles.empty}>
-          {`Building history — ${data.length} day${data.length === 1 ? "" : "s"} so far.`}
+          {`Building history, ${data.length} day${data.length === 1 ? "" : "s"} so far.`}
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={132}>

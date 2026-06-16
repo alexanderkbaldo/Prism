@@ -3,8 +3,8 @@ import React from "react";
 export default function Footer() {
   return (
     <footer style={styles.footer}>
-      Prism — a University of Michigan student project. For research and
-      educational purposes only; not investment advice.
+      Prism, a student project. For research and educational purposes only; not
+      investment advice.
     </footer>
   );
 }

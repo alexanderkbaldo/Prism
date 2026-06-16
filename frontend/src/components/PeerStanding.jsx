@@ -7,7 +7,7 @@ function ordinal(n) {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-// A compact relative read — where this company stands among the tracked
+// A compact relative read, where this company stands among the tracked
 // fintechs this week. Gives the raw numbers a peer baseline ("is 246 a lot?").
 export default function PeerStanding({ ticker }) {
   const ranks = usePeerRanks(ticker);

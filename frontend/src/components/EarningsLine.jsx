@@ -35,7 +35,7 @@ export default function EarningsLine({ ticker }) {
 
   const when = formatDate(date);
 
-  // ≤3 days: peak relevance — bold clay sentence.
+  // ≤3 days: peak relevance, bold clay sentence.
   if (days <= 3) {
     const lead = days <= 0 ? "Earnings today" : `Earnings in ${dayWord(days)}`;
     return (
@@ -47,13 +47,13 @@ export default function EarningsLine({ ticker }) {
     );
   }
 
-  // ≤14 days: approaching — clay accent sentence.
+  // ≤14 days: approaching, clay accent sentence.
   if (days <= 14) {
     return (
       <p style={{ ...styles.line, ...styles.urgent }}>
         Earnings in {dayWord(days)}
         <span style={styles.sep}>·</span>
-        {when} — signals matter now
+        {when}, signals matter now
       </p>
     );
   }

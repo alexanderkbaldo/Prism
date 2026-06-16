@@ -63,7 +63,7 @@ const styles = {
     margin: "0 auto",
     padding: "0 40px 80px",
   },
-  // An elevated reading panel — the editorial content lifted off the canvas,
+  // An elevated reading panel, the editorial content lifted off the canvas,
   // with a comfortable ~600px measure inside generous padding.
   article: {
     maxWidth: "760px",

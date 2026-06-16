@@ -29,7 +29,7 @@ export default function ChatLauncher({ ticker }) {
     const q = question.trim();
     if (!q || streaming) return;
     setInput("");
-    // Snapshot the completed turns before this one — that's the history the
+    // Snapshot the completed turns before this one, that's the history the
     // model needs to resolve follow-ups like "why?".
     const history = messages.filter((m) => m.text);
     setMessages((m) => [...m, { role: "user", text: q }, { role: "assistant", text: "" }]);

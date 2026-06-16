@@ -18,7 +18,7 @@ const COMPANIES = [
 const NAME = Object.fromEntries(COMPANIES);
 
 function verdictRead(v) {
-  if (!v) return { label: "—", color: "var(--faint)" };
+  if (!v) return { label: "-", color: "var(--faint)" };
   if (v.score >= 1) return { label: "Looking positive", color: "var(--up)" };
   if (v.score <= -1) return { label: "Looking negative", color: "var(--down)" };
   return { label: "Mixed signals", color: "var(--muted)" };
@@ -140,7 +140,7 @@ function ComparisonCard({ left, right }) {
         if (e.name !== "AbortError") {
           setText(
             `${NAME[left]} and ${NAME[right]} are both tracked across five ` +
-            `alternative-data signals — pick a side above to see the live read.`
+            `alternative-data signals, pick a side above to see the live read.`
           );
         }
       } finally {

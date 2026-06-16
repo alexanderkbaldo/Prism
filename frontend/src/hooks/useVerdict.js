@@ -63,7 +63,7 @@ export function useVerdict(ticker) {
   if (hireCur > hirePrior) { score += 1; hireText = "hiring is growing"; }
   else if (hireCur < hirePrior) { score -= 1; hireText = "hiring is slowing"; }
 
-  // Plain words, not finance jargon — Maya should know what it means instantly.
+  // Plain words, not finance jargon, Maya should know what it means instantly.
   let label = "Mixed";
   let color = "var(--muted)";
   if (score >= 1) { label = "Looking positive"; color = "var(--up)"; }

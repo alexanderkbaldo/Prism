@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAlerts } from "../hooks/useApi";
 
-// Source text (esp. StockTwits) arrives HTML-escaped — &#39; &amp; &quot; etc.
+// Source text (esp. StockTwits) arrives HTML-escaped, &#39; &amp; &quot; etc.
 // Decode it for display. A detached textarea decodes entities without ever
 // parsing markup into the live DOM, so it's safe (no XSS surface).
 function decodeEntities(str) {

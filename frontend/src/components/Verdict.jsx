@@ -2,7 +2,7 @@ import React from "react";
 import { useVerdict } from "../hooks/useVerdict";
 
 // A scannable, data-driven read of the week, shown under the company name. It
-// summarises the alternative-data signals below — not a price view, not advice.
+// summarises the alternative-data signals below, not a price view, not advice.
 export default function Verdict({ ticker }) {
   const v = useVerdict(ticker);
   if (!v) return null;
@@ -10,11 +10,11 @@ export default function Verdict({ ticker }) {
   return (
     <div
       style={styles.wrap}
-      title="Our quick read on this week's signals — based on social mood and hiring. Not investment advice."
+      title="Our quick read on this week's signals, based on social mood and hiring. Not investment advice."
     >
       <span style={{ ...styles.dot, background: v.color }} />
       <span style={{ ...styles.label, color: v.color }}>{v.label}</span>
-      <span style={styles.clause}>— {v.sentText}, {v.hireText}</span>
+      <span style={styles.clause}>· {v.sentText}, {v.hireText}</span>
     </div>
   );
 }
