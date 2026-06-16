@@ -216,7 +216,6 @@ const styles = {
     borderRadius: "16px",
     padding: "32px 34px",
     boxShadow: "0 24px 60px rgba(26, 32, 24, 0.28), 0 6px 18px rgba(26, 32, 24, 0.18)",
-    transform: "rotate(-0.5deg)",
   },
   mockHead: { display: "flex", alignItems: "center", justifyContent: "space-between" },
   mockEyebrow: {

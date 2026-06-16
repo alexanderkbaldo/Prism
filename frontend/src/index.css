@@ -100,7 +100,7 @@ button { font-family: inherit; }
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .home-mockcard:hover {
-  transform: translateY(-4px) rotate(-0.5deg);
+  transform: translateY(-4px);
   box-shadow: 0 32px 70px rgba(26, 32, 24, 0.34), 0 8px 22px rgba(26, 32, 24, 0.2);
 }
 
