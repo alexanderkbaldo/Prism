@@ -105,6 +105,17 @@ ALTER TABLE signals
 ALTER TABLE alerts
     ADD COLUMN IF NOT EXISTS notified_at TIMESTAMPTZ;
 
+-- Earnings calendar cache. One row per company (canonical name); refreshed at
+-- most once every 24h by the /earnings endpoint, which uses Claude web search
+-- to find the next scheduled earnings date. Avoids a web search per request.
+CREATE TABLE IF NOT EXISTS company_earnings (
+    company            TEXT PRIMARY KEY,   -- canonical name
+    ticker             TEXT,
+    next_earnings_date DATE,               -- NULL if not found
+    source_searched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    note               TEXT                -- optional model rationale/source
+);
+
 -- Convenience view: daily per-company sentiment + volume rollup.
 CREATE OR REPLACE VIEW daily_company_signals AS
 SELECT

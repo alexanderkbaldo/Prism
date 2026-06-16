@@ -414,3 +414,42 @@ def weekly_aggregates(company: str) -> list[dict]:
             {"company": company},
         )
         return cur.fetchall()
+
+
+def get_cached_earnings(company: str) -> dict | None:
+    """Most recent cached earnings row for a company (ticker or name match)."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT company, ticker, next_earnings_date, source_searched_at, note
+            FROM company_earnings
+            WHERE upper(ticker) = upper(%(company)s)
+               OR lower(company) = lower(%(company)s)
+            LIMIT 1
+            """,
+            {"company": company},
+        )
+        return cur.fetchone()
+
+
+def upsert_earnings(
+    company: str,
+    ticker: str | None,
+    next_earnings_date,
+    note: str | None = None,
+) -> None:
+    """Cache a company's next earnings date, stamping the search time to now()."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO company_earnings
+                (company, ticker, next_earnings_date, source_searched_at, note)
+            VALUES (%s, %s, %s, now(), %s)
+            ON CONFLICT (company) DO UPDATE
+                SET ticker             = EXCLUDED.ticker,
+                    next_earnings_date = EXCLUDED.next_earnings_date,
+                    source_searched_at = now(),
+                    note               = EXCLUDED.note
+            """,
+            (company, ticker, next_earnings_date, note),
+        )

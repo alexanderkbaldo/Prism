@@ -175,6 +175,28 @@ def get_correlation(
                 "insight": "3 signals aligned bullish this week"}
 
 
+@app.get("/earnings", dependencies=PROTECTED)
+def get_earnings(
+    company: str = Query(..., description="Ticker (HOOD) or name (Robinhood)"),
+) -> dict[str, Any]:
+    """Next scheduled earnings date for a company (Claude web search, 24h cache).
+
+    Returns {company, next_earnings_date, days_until, source_searched_at}. If
+    the lookup yields nothing (no key, DB down, or not found) a clearly-labelled
+    mock date is returned so the dashboard indicator still renders.
+    """
+    try:
+        from prism.ai.earnings import get_next_earnings
+
+        res = get_next_earnings(company)
+        if res.get("next_earnings_date"):
+            return {"source": "db", **res}
+    except Exception:  # noqa: BLE001
+        log.exception("earnings lookup failed; returning mock data")
+
+    return {"source": "mock", **_mock_earnings(company)}
+
+
 class ChatTurn(BaseModel):
     role: str  # "user" or "assistant"
     text: str = ""
@@ -265,6 +287,22 @@ def _mock_brief(company: str) -> dict:
             "**Bottom line:** constructive across data sources; no red flags. "
             "(mock data — Postgres not reachable)"
         ),
+    }
+
+
+def _mock_earnings(company: str) -> dict:
+    """A plausible upcoming earnings date so the indicator renders standalone."""
+    match = next((c for c in COMPANIES
+                  if c.ticker == company.upper()
+                  or c.name.lower() == company.lower()), None)
+    days_until = 46
+    next_date = (datetime.now(timezone.utc).date() + timedelta(days=days_until))
+    return {
+        "company": match.name if match else company,
+        "ticker": match.ticker if match else company.upper(),
+        "next_earnings_date": next_date.isoformat(),
+        "days_until": days_until,
+        "source_searched_at": datetime.now(timezone.utc).isoformat(),
     }
 
 

@@ -4,6 +4,7 @@ import StatRow from "../components/StatRow";
 import SignalReport from "../components/SignalReport";
 import SignalCorrelation from "../components/SignalCorrelation";
 import AnomalyLine from "../components/AnomalyLine";
+import EarningsLine from "../components/EarningsLine";
 import Verdict from "../components/Verdict";
 import PeerStanding from "../components/PeerStanding";
 import Footer from "../components/Footer";
@@ -31,6 +32,7 @@ function Hero({ ticker }) {
       <span style={styles.tracking}>
         Tracking 5 alternative-data signals · updated daily at 6am
       </span>
+      <EarningsLine ticker={ticker} />
       <Verdict ticker={ticker} />
       <PeerStanding ticker={ticker} />
       {read && <p style={styles.read}>{read}</p>}
