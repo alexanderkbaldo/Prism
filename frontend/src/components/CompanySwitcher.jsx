@@ -17,6 +17,8 @@ export default function CompanySwitcher({ ticker, onChange }) {
           <button
             key={t}
             onClick={() => onChange(t)}
+            className={active ? "is-active" : undefined}
+            aria-pressed={active}
             style={{ ...styles.tab, ...(active ? styles.tabActive : {}) }}
           >
             <span

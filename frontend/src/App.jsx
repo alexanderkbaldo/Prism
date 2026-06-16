@@ -42,22 +42,25 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh" }}>
+      <a href="#main" className="skip-link">Skip to content</a>
       <NavBar />
-      {reduce ? (
-        routes
-      ) : (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-          >
-            {routes}
-          </motion.div>
-        </AnimatePresence>
-      )}
+      <main id="main">
+        {reduce ? (
+          routes
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              {routes}
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </main>
       <ChatLauncher ticker={ticker} />
     </div>
   );

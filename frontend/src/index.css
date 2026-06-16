@@ -29,6 +29,36 @@
 
   --serif: "Newsreader", Georgia, "Times New Roman", serif;
   --sans:  "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Spacing scale (4px base) — a single rhythm for padding, gaps, and section
+     spacing. See frontend/DESIGN_SYSTEM.md. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 120px;
+
+  /* Type scale — display uses --serif; UI/body uses --sans. */
+  --text-eyebrow: 10px;   /* uppercase labels */
+  --text-caption: 12px;
+  --text-body: 16px;
+  --text-body-lg: 18px;
+  --text-h3: 24px;
+  --text-h2: 44px;        /* section serif headline */
+  --text-display: 64px;   /* hero serif */
+
+  /* Focus ring — visible keyboard affordance, brand-tinted. */
+  --focus-ring: 0 0 0 3px var(--sage-soft);
+
+  /* z-index scale */
+  --z-nav: 500;
+  --z-overlay: 600;
+  --z-launcher: 1000;
 }
 
 html { font-size: 16px; }
@@ -59,6 +89,42 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 99px; }
 
 button { font-family: inherit; }
+
+/* Accessibility: a visible, consistent keyboard focus ring on every
+   interactive element (mouse clicks don't trigger :focus-visible, so it stays
+   clean for pointer users). HIGH-priority per the UI/UX guidelines. */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Skip link — lets keyboard users jump past the nav. Hidden until focused. */
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -48px;
+  z-index: var(--z-launcher);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 16px;
+}
+
+/* Company switcher tabs: smooth background wash on hover (skill: data-dense
+   dashboard, tab interactions). Active tab is dark — leave it. */
+.company-tabs button { transition: background 0.15s ease, color 0.15s ease; }
+.company-tabs button:not(.is-active):hover { background: var(--surface) !important; }
 
 /* Nav links: warm sage on hover with a left-anchored underline slide-in.
    NavLink adds .active to the current route — leave it alone. */
