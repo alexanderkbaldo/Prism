@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import NavBar from "./components/NavBar";
@@ -14,6 +14,19 @@ export default function App() {
   const [ticker, setTicker] = useState("HOOD");
   const location = useLocation();
   const reduce = useReducedMotion();
+
+  // Opt out of the browser's automatic scroll restoration so navigations don't
+  // land mid-page.
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
+
+  // Always start a newly-navigated page at the top.
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   const routes = (
     <Routes location={location}>
