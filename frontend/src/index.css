@@ -64,6 +64,24 @@ button { font-family: inherit; }
 .nav-links a { transition: color 0.15s; }
 .nav-links a:not(.active):hover { color: var(--sage) !important; }
 
+/* Home interactive hover transitions (0.2s ease). */
+.home-launch {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.home-launch:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(107, 143, 113, 0.32);
+  filter: brightness(1.04);
+}
+.track-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.track-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+  border-color: var(--sage) !important;
+}
+
 /* Responsive overrides. Components use inline styles (desktop values), so these
    use !important to take over on small screens. */
 @media (max-width: 720px) {
@@ -91,7 +109,16 @@ button { font-family: inherit; }
   }
   .company-tabs { flex-wrap: wrap !important; }
 
-  /* Home hero: smaller headline, less vertical air. */
-  .home-hero { padding-top: 88px !important; padding-bottom: 72px !important; }
-  .home-headline { font-size: 34px !important; }
+  /* Home hero: stack the split layout, shrink the headline, relax full height. */
+  .home-hero { min-height: 0 !important; }
+  .home-hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 40px !important;
+    padding: 64px 20px !important;
+  }
+  .home-headline { font-size: 36px !important; }
+
+  /* Home content grids collapse to one column. */
+  .steps-grid { grid-template-columns: 1fr !important; gap: 36px !important; }
+  .track-grid { grid-template-columns: 1fr !important; }
 }

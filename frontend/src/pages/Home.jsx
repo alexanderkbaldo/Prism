@@ -1,29 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import StatRow from "../components/StatRow";
-import Verdict from "../components/Verdict";
 import Footer from "../components/Footer";
-import { useBrief } from "../hooks/useApi";
-import { extractBottomLine } from "../utils/brief";
-
-// The brief's plain-English bottom line — gives the preview an AI "read", not
-// just numbers. Mirrors what the dashboard shows.
-function PreviewRead({ ticker }) {
-  const { data } = useBrief(ticker);
-  const { sentence } = extractBottomLine(data?.brief?.brief_text);
-  if (!sentence) return null;
-  return <p style={styles.previewRead}>{sentence}</p>;
-}
-
-// Section eyebrow with a small sage accent dot — one warm accent per section.
-function SectionLabel({ children }) {
-  return (
-    <span className="eyebrow" style={styles.sectionLabel}>
-      <span style={styles.labelDot} />
-      {children}
-    </span>
-  );
-}
 
 const STEPS = [
   { n: "1", title: "Collect", body: "Five alternative-data signals, gathered every morning." },
@@ -39,135 +16,156 @@ const TRACKED = [
   ["SEC filings", "New 10-K, 10-Q, 8-K, and S-1 activity."],
 ];
 
+// Sample data for the hero's product mockup — illustrative, not live.
+const MOCK_CHIPS = [
+  ["Sentiment", "87"],
+  ["Hiring", "12"],
+  ["Search", "91"],
+  ["Filings", "2"],
+];
+
+function SectionLabel({ children, dark }) {
+  return (
+    <span style={{ ...styles.label, ...(dark ? styles.labelDark : {}) }}>{children}</span>
+  );
+}
+
+function MockCard() {
+  return (
+    <div style={styles.mockCard}>
+      <div style={styles.mockHead}>
+        <span style={styles.mockEyebrow}>Research brief</span>
+        <span style={styles.mockTicker}>HOOD</span>
+      </div>
+
+      <h3 style={styles.mockName}>Robinhood</h3>
+
+      <div style={styles.mockScoreRow}>
+        <span style={styles.mockScore}>87</span>
+        <span style={styles.mockScoreLabel}>Sentiment score</span>
+      </div>
+
+      <p style={styles.mockBrief}>
+        Elevated search interest and insider activity suggest near-term upside
+        despite recent pullback.
+      </p>
+
+      <div style={styles.mockChips}>
+        {MOCK_CHIPS.map(([label, value]) => (
+          <div key={label} style={styles.chip}>
+            <span style={styles.chipLabel}>{label}</span>
+            <span style={styles.chipValue}>{value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   return (
-    <div className="page" style={styles.column}>
-      {/* Hero */}
+    <div>
+      {/* Hero — full viewport, split layout */}
       <section className="home-hero" style={styles.hero}>
-        {/* Faint decorative line-chart motif behind the headline. */}
-        <svg
-          style={styles.heroMotif}
-          viewBox="0 0 900 200"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <polyline
-            points="0,150 90,140 180,158 270,120 360,132 450,80 540,104 630,52 720,74 810,28 900,44"
-            fill="none"
-            stroke="var(--sage)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <circle cx="450" cy="80" r="4" fill="var(--sage)" />
-          <circle cx="810" cy="28" r="4" fill="var(--sage)" />
-        </svg>
-
-        <div style={styles.heroContent}>
-          <h1 className="home-headline" style={styles.headline}>
-            Fintech intelligence before the earnings call.
-          </h1>
-          <p style={styles.sub}>
-            Prism monitors five alternative-data signals across leading fintech
-            companies and uses AI to turn them into readable research.
-          </p>
-          <Link to="/dashboard" style={styles.cta}>Launch dashboard</Link>
-        </div>
-      </section>
-
-      {/* A look inside — the elevated product-preview panel. */}
-      <section style={styles.section}>
-        <div style={styles.previewCard}>
-          <div style={styles.sectionHead}>
-            <SectionLabel>A look inside</SectionLabel>
-            <span style={styles.previewMeta}>Robinhood · last 7 days</span>
+        <div className="home-hero-grid" style={styles.heroGrid}>
+          <div style={styles.heroLeft}>
+            <h1 className="home-headline" style={styles.headline}>
+              Fintech intelligence before the earnings call.
+            </h1>
+            <p style={styles.sub}>
+              Prism monitors five alternative-data signals across leading fintech
+              companies and uses AI to turn them into readable research.
+            </p>
+            <Link to="/dashboard" className="home-launch" style={styles.cta}>
+              Launch dashboard
+            </Link>
           </div>
-          <h2 style={styles.previewName}>Robinhood</h2>
-          <Verdict ticker="HOOD" />
-          <PreviewRead ticker="HOOD" />
-          <StatRow ticker="HOOD" />
-          <Link to="/dashboard" style={styles.previewLink}>See the full brief →</Link>
+
+          <div style={styles.heroRight}>
+            <MockCard />
+          </div>
         </div>
       </section>
 
-      {/* How it works — three KPI-style cards lifting off the canvas. */}
-      <section style={styles.section}>
-        <SectionLabel>How it works</SectionLabel>
-        <div style={styles.steps}>
-          {STEPS.map((s) => (
-            <div key={s.n} style={styles.step}>
-              <span style={styles.stepN}>{s.n}</span>
-              <h3 style={styles.stepTitle}>{s.title}</h3>
-              <p style={styles.stepBody}>{s.body}</p>
-            </div>
-          ))}
+      {/* How it works — dramatic dark band */}
+      <section style={styles.darkSection}>
+        <div style={styles.inner}>
+          <SectionLabel dark>How it works</SectionLabel>
+          <div className="steps-grid" style={styles.steps}>
+            {STEPS.map((s) => (
+              <div key={s.n} style={styles.step}>
+                <span style={styles.stepN}>{s.n}</span>
+                <h3 style={styles.stepTitle}>{s.title}</h3>
+                <p style={styles.stepBody}>{s.body}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* What we track — a paper panel holding the list. */}
-      <section style={styles.section}>
-        <SectionLabel>What we track</SectionLabel>
-        <ul style={styles.tracked}>
-          {TRACKED.map(([name, desc], i) => (
-            <li
-              key={name}
-              style={{ ...styles.trackedRow, ...(i === TRACKED.length - 1 ? styles.trackedRowLast : {}) }}
-            >
-              <span style={styles.trackedName}>{name}</span>
-              <span style={styles.trackedDesc}>{desc}</span>
-            </li>
-          ))}
-        </ul>
+      {/* What we track — two-column card grid */}
+      <section style={styles.trackSection}>
+        <div style={styles.inner}>
+          <SectionLabel>What we track</SectionLabel>
+          <div className="track-grid" style={styles.trackGrid}>
+            {TRACKED.map(([name, desc]) => (
+              <div key={name} className="track-card" style={styles.trackCard}>
+                <span style={styles.trackDot} />
+                <div>
+                  <h3 style={styles.trackName}>{name}</h3>
+                  <p style={styles.trackDesc}>{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
-      <Footer />
+      <div style={styles.inner}>
+        <Footer />
+      </div>
     </div>
   );
 }
 
 const styles = {
-  column: {
+  inner: {
     maxWidth: "1200px",
     margin: "0 auto",
-    padding: "0 40px 80px",
+    padding: "0 40px",
   },
+
+  // ---- Hero ----
   hero: {
-    position: "relative",
-    paddingTop: "150px",
-    paddingBottom: "96px",
-    maxWidth: "720px",
-    marginLeft: "auto",
-    marginRight: "auto",
-    textAlign: "center",
+    minHeight: "calc(100vh - 73px)",
+    display: "flex",
+    alignItems: "center",
   },
-  heroMotif: {
-    position: "absolute",
-    top: "50%",
-    left: "-12%",
-    width: "124%",
-    height: "320px",
-    transform: "translateY(-50%)",
-    opacity: 0.1,
-    pointerEvents: "none",
-    zIndex: 0,
+  heroGrid: {
+    maxWidth: "1200px",
+    margin: "0 auto",
+    padding: "80px 40px",
+    width: "100%",
+    display: "grid",
+    gridTemplateColumns: "1.05fr 0.95fr",
+    gap: "64px",
+    alignItems: "center",
   },
-  heroContent: { position: "relative", zIndex: 1 },
+  heroLeft: { maxWidth: "560px" },
   headline: {
     fontFamily: "var(--serif)",
-    fontSize: "56px",
+    fontSize: "62px",
     fontWeight: 400,
-    lineHeight: 1.08,
+    lineHeight: 1.05,
     letterSpacing: "-0.02em",
     color: "var(--ink)",
   },
   sub: {
-    fontSize: "17px",
+    fontSize: "18px",
     lineHeight: 1.6,
     color: "var(--muted)",
     marginTop: "28px",
-    maxWidth: "560px",
-    marginLeft: "auto",
-    marginRight: "auto",
+    maxWidth: "480px",
   },
   cta: {
     display: "inline-block",
@@ -175,130 +173,183 @@ const styles = {
     background: "var(--sage)",
     color: "#fff",
     textDecoration: "none",
-    fontSize: "14px",
+    fontSize: "15px",
     fontWeight: 500,
-    padding: "12px 24px",
-    borderRadius: "8px",
+    padding: "16px 32px",
+    borderRadius: "10px",
   },
 
-  // Seamless flow with generous breathing room rather than divider bands —
-  // separation now comes from the cards lifting off the canvas.
-  section: {
-    marginTop: "72px",
+  // ---- Hero mock card ----
+  heroRight: { display: "flex", justifyContent: "center" },
+  mockCard: {
+    width: "100%",
+    maxWidth: "420px",
+    background: "var(--ink)",
+    color: "var(--bg)",
+    borderRadius: "16px",
+    padding: "32px 34px",
+    boxShadow: "0 24px 60px rgba(26, 32, 24, 0.28), 0 6px 18px rgba(26, 32, 24, 0.18)",
+    transform: "rotate(-0.5deg)",
   },
-  previewCard: {
-    background: "var(--paper-raised)",
-    border: "0.5px solid var(--hairline)",
-    borderRadius: "12px",
-    boxShadow: "var(--shadow-card)",
-    padding: "36px 40px",
-  },
-  sectionHead: {
+  mockHead: {
     display: "flex",
-    alignItems: "baseline",
+    alignItems: "center",
     justifyContent: "space-between",
   },
-  sectionLabel: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
+  mockEyebrow: {
+    fontSize: "10px",
+    fontWeight: 500,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    color: "var(--sage-soft)",
   },
-  labelDot: {
-    width: "6px",
-    height: "6px",
-    borderRadius: "50%",
-    background: "var(--sage)",
-    display: "inline-block",
+  mockTicker: {
+    fontSize: "11px",
+    letterSpacing: "0.08em",
+    color: "rgba(231, 220, 203, 0.55)",
   },
-  previewMeta: { fontSize: "11px", color: "var(--faint)" },
-  previewName: {
+  mockName: {
     fontFamily: "var(--serif)",
     fontSize: "30px",
     fontWeight: 400,
     letterSpacing: "-0.01em",
-    color: "var(--ink)",
-    marginTop: "12px",
+    color: "var(--bg)",
+    marginTop: "18px",
   },
-  previewRead: {
+  mockScoreRow: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: "12px",
+    marginTop: "14px",
+  },
+  mockScore: {
     fontFamily: "var(--serif)",
-    fontSize: "20px",
-    fontStyle: "italic",
-    lineHeight: 1.45,
-    color: "var(--muted)",
-    margin: "16px 0 4px",
-    maxWidth: "620px",
-  },
-  previewLink: {
-    fontSize: "13px",
+    fontSize: "52px",
+    fontWeight: 400,
+    lineHeight: 1,
     color: "var(--sage)",
-    textDecoration: "none",
+  },
+  mockScoreLabel: {
+    fontSize: "11px",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "rgba(231, 220, 203, 0.6)",
+  },
+  mockBrief: {
+    fontFamily: "var(--serif)",
+    fontSize: "16px",
+    fontStyle: "italic",
+    lineHeight: 1.5,
+    color: "rgba(231, 220, 203, 0.85)",
+    marginTop: "20px",
+  },
+  mockChips: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+    marginTop: "24px",
+  },
+  chip: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "10px 14px",
+    borderRadius: "10px",
+    border: "1px solid rgba(231, 220, 203, 0.16)",
+  },
+  chipLabel: {
+    fontSize: "11px",
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    color: "rgba(231, 220, 203, 0.62)",
+  },
+  chipValue: {
+    fontFamily: "var(--serif)",
+    fontSize: "18px",
+    color: "var(--bg)",
   },
 
+  // ---- Section labels ----
+  label: {
+    fontSize: "11px",
+    fontWeight: 600,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    color: "var(--sage)",
+  },
+  labelDark: { color: "var(--sage)" },
+
+  // ---- How it works (dark) ----
+  darkSection: {
+    background: "var(--ink)",
+    padding: "120px 0",
+  },
   steps: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "20px",
-    marginTop: "24px",
+    gap: "48px",
+    marginTop: "48px",
   },
-  step: {
-    background: "var(--paper)",
-    border: "0.5px solid var(--hairline)",
-    borderRadius: "10px",
-    boxShadow: "var(--shadow-card)",
-    padding: "28px 28px 30px",
-  },
+  step: {},
   stepN: {
     fontFamily: "var(--serif)",
-    fontSize: "18px",
+    fontSize: "54px",
+    fontWeight: 400,
+    lineHeight: 1,
     color: "var(--sage)",
-    width: "38px",
-    height: "38px",
-    borderRadius: "50%",
-    background: "var(--sage-soft)",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
+    letterSpacing: "-0.02em",
   },
   stepTitle: {
+    fontFamily: "var(--serif)",
+    fontSize: "24px",
+    fontWeight: 400,
+    color: "var(--bg)",
+    marginTop: "20px",
+  },
+  stepBody: {
+    fontSize: "15px",
+    lineHeight: 1.6,
+    color: "rgba(231, 220, 203, 0.7)",
+    marginTop: "12px",
+    maxWidth: "280px",
+  },
+
+  // ---- What we track ----
+  trackSection: {
+    padding: "120px 0",
+  },
+  trackGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "20px",
+    marginTop: "48px",
+  },
+  trackCard: {
+    display: "flex",
+    gap: "16px",
+    background: "var(--surface)",
+    border: "0.5px solid var(--hairline)",
+    borderRadius: "12px",
+    padding: "28px 30px",
+  },
+  trackDot: {
+    width: "9px",
+    height: "9px",
+    borderRadius: "50%",
+    background: "var(--sage)",
+    flexShrink: 0,
+    marginTop: "8px",
+  },
+  trackName: {
     fontFamily: "var(--serif)",
     fontSize: "20px",
     fontWeight: 400,
     color: "var(--ink)",
-    marginTop: "12px",
   },
-  stepBody: {
+  trackDesc: {
     fontSize: "14.5px",
     lineHeight: 1.6,
     color: "var(--muted)",
     marginTop: "8px",
-  },
-
-  tracked: {
-    listStyle: "none",
-    marginTop: "24px",
-    background: "var(--paper)",
-    border: "0.5px solid var(--hairline)",
-    borderRadius: "10px",
-    boxShadow: "var(--shadow-card)",
-    padding: "8px 32px",
-  },
-  trackedRow: {
-    display: "flex",
-    gap: "32px",
-    padding: "18px 0",
-    borderBottom: "0.5px solid var(--hairline)",
-  },
-  trackedRowLast: { borderBottom: "none" },
-  trackedName: {
-    fontFamily: "var(--serif)",
-    fontSize: "17px",
-    color: "var(--ink)",
-    flexShrink: 0,
-    width: "200px",
-  },
-  trackedDesc: {
-    fontSize: "14.5px",
-    lineHeight: 1.6,
-    color: "var(--muted)",
   },
 };
