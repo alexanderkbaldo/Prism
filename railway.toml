@@ -9,13 +9,18 @@
 # background workers (normaliser, scorer, prefect-worker) are deployed as
 # separate Railway services using the same image with their own start commands —
 # see DEPLOY.md.
+#
+# NOTE: bind uvicorn to `::` (IPv6), not 0.0.0.0. Railway's healthcheck and
+# edge proxy reach containers over its IPv6 private network; an IPv4-only
+# 0.0.0.0 bind passes locally but fails Railway's healthcheck ("service
+# unavailable") and serves 404 publicly. `::` accepts both IPv6 and IPv4.
 
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "docker/Dockerfile"
 
 [deploy]
-startCommand = "python -m prism.common.migrate && uvicorn prism.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+startCommand = "python -m prism.common.migrate && uvicorn prism.api.main:app --host :: --port ${PORT:-8000}"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
 healthcheckPath = "/healthz"

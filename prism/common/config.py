@@ -27,6 +27,12 @@ class Settings(BaseSettings):
         default="postgresql://prism:prism@localhost:5432/prism"
     )
 
+    # --- API server -----------------------------------------------------
+    # Host/port uvicorn binds to. In production the platform's $PORT usually
+    # overrides api_port (e.g. Railway's start command passes --port $PORT).
+    api_host: str = Field(default="0.0.0.0")
+    api_port: int = Field(default=8000)
+
     # --- General scraper behaviour -------------------------------------
     # When a scraper has no credentials configured it falls back to emitting
     # deterministic sample data so the full pipeline can be exercised locally.

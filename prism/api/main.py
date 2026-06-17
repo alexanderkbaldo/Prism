@@ -330,12 +330,10 @@ def _mock_series(days: int) -> dict[str, list]:
 
 def serve() -> None:
     """Console-script entry point: run the API with uvicorn."""
-    import os
-
     import uvicorn
 
     uvicorn.run(
         "prism.api.main:app",
-        host=os.getenv("API_HOST", "0.0.0.0"),
-        port=int(os.getenv("API_PORT", "8000")),
+        host=settings.api_host,
+        port=settings.api_port,
     )

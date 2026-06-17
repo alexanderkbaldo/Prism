@@ -33,6 +33,27 @@ start command (Settings → Deploy → Custom Start Command):
 They share the same Postgres/Redis plugins and variables. Without them, the API
 returns empty results (or labelled mock data if the DB is unreachable).
 
+**Do not run the migration in a worker start command.** Only the API service
+runs `python -m prism.common.migrate` (it's baked into `railway.toml`'s start
+command). Letting multiple services migrate concurrently on first deploy can
+race; the workers just need the schema to already exist. If you ever deploy a
+worker *before* the API, run the migration once manually first:
+`railway ssh "python -m prism.common.migrate"`.
+
+**Prefect networking (`prefect-worker` only).** `docker-compose.yml` points the
+worker at `http://prefect-server:4200/api`, and the local default is
+`http://localhost:4200/api` — neither resolves on Railway. If you run Prefect on
+Railway, deploy a `prefect-server` service (`prefect server start --host 0.0.0.0`)
+and set on the worker:
+
+```
+PREFECT_API_URL=http://<prefect-server-service>.railway.internal:4200/api
+```
+
+using Railway's private network hostname (Settings → Networking shows the
+service's internal domain). Simpler first ship: skip Prefect entirely and use the
+**snapshot deploy** below — it seeds data once and needs no `prefect-worker`.
+
 ## 2. Frontend (Vercel)
 
 1. **New Project → import the repo**, set **Root Directory = `frontend`**.
