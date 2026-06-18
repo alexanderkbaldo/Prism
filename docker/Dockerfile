@@ -21,5 +21,11 @@ RUN pip install -e .
 # don't bust the dependency layer cache.
 COPY sql ./sql
 
-# Default command; overridden per-service in docker-compose.yml.
+# API entrypoint (migrate, then exec uvicorn). Used by railway.toml's start
+# command; see the script for why it's not an inline "migrate && uvicorn".
+COPY docker/start-api.sh ./start-api.sh
+RUN chmod +x ./start-api.sh
+
+# Default command; overridden per-service in docker-compose.yml and by
+# railway.toml's startCommand for the API service.
 CMD ["python", "-m", "prism.normaliser.worker"]
