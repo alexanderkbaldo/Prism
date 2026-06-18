@@ -21,10 +21,23 @@ const C = { sage: "#6B8F71", ink: "#1A2018", hairline: "#CBBDA8", faint: "#8A7D6
 
 // ---- data helpers -----------------------------------------------------------
 
-function isoDaysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
+// N days before an anchor date (YYYY-MM-DD), in UTC.
+function isoDaysBefore(anchor, n) {
+  const d = new Date(anchor + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - n);
   return d.toISOString().slice(0, 10);
+}
+
+// Freshest day present across all series categories. The weekly windows anchor
+// to this rather than the viewer's clock (new Date()): the cards should show the
+// most recent week of data that exists, regardless of client timezone/clock
+// skew or how stale the snapshot is. A clock-anchored window silently showed 0
+// for every card whenever "today" was more than ~6 days past the latest data.
+function latestDay(series) {
+  let m = null;
+  for (const pts of Object.values(series || {}))
+    for (const p of pts || []) if (!m || p.day > m) m = p.day;
+  return m;
 }
 
 function weekAgg(points, from, to) {
@@ -44,9 +57,12 @@ function weekAgg(points, from, to) {
 }
 
 function metricsFor(series, key) {
-  const cur = weekAgg(series[key], isoDaysAgo(6), isoDaysAgo(0));
-  const prior = weekAgg(series[key], isoDaysAgo(13), isoDaysAgo(7));
-  const month = weekAgg(series[key], isoDaysAgo(29), isoDaysAgo(0));
+  // Anchor to the most recent day with data (fallback to today if the series
+  // is empty), so the windows track the data, not the viewer's clock.
+  const anchor = latestDay(series) || new Date().toISOString().slice(0, 10);
+  const cur = weekAgg(series[key], isoDaysBefore(anchor, 6), anchor);
+  const prior = weekAgg(series[key], isoDaysBefore(anchor, 13), isoDaysBefore(anchor, 7));
+  const month = weekAgg(series[key], isoDaysBefore(anchor, 29), anchor);
   const score = cur.sentiment != null ? Math.round(((cur.sentiment + 1) / 2) * 100) : null;
   return {
     count: cur.count,
