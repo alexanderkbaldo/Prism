@@ -9,10 +9,10 @@
 # a real shell sequences the two steps.
 #
 # `exec` replaces this shell with uvicorn so it becomes PID 1 and receives
-# Railway's stop/restart signals directly. Bind to `::` (IPv6) so Railway's
-# healthcheck and edge proxy — which reach containers over IPv6 — can connect;
-# `::` also accepts IPv4. PORT is provided by Railway (falls back to 8000 locally).
+# Railway's stop/restart signals directly. Bind to 0.0.0.0 (IPv4): this Railway
+# service's healthcheck connects over IPv4, and an IPv6-only `::` bind fails it
+# even though uvicorn is up. PORT is provided by Railway (falls back to 8000).
 set -e
 
 python -m prism.common.migrate
-exec uvicorn prism.api.main:app --host :: --port "${PORT:-8000}"
+exec uvicorn prism.api.main:app --host 0.0.0.0 --port "${PORT:-8000}"

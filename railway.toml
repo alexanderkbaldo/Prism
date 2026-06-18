@@ -9,8 +9,8 @@
 # exec uvicorn. It is a script (not an inline "migrate && uvicorn ...") because
 # Railway may exec the start command without a shell, turning "&&" into a literal
 # arg so uvicorn never starts (symptom: "migration complete", no server). The
-# script also binds uvicorn to `::` so Railway's IPv6 healthcheck/edge proxy can
-# reach it — a 0.0.0.0 bind passes locally but fails the healthcheck in prod.
+# script binds uvicorn to 0.0.0.0 — this service's healthcheck connects over
+# IPv4, and an IPv6-only `::` bind fails the healthcheck even with uvicorn up.
 #
 # The background workers (normaliser, scorer, prefect-worker) are deployed as
 # separate Railway services using the same image with their own start commands —
