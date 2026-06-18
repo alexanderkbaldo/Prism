@@ -22,6 +22,20 @@ from prism.scrapers.sec_edgar import SecEdgarScraper
 from prism.scrapers.sentiment import SentimentScraper
 
 logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
+
+
+def _logger():
+    """Prefect's run logger inside a flow/task context, else standard logging.
+
+    `run <name>` calls the task's underlying function directly (outside any
+    Prefect context), where `get_run_logger()` raises MissingContextError; this
+    falls back to module logging so manual/CLI runs work."""
+    try:
+        return get_run_logger()
+    except Exception:  # noqa: BLE001 - no active Prefect run context
+        return log
+
 
 _SCRAPERS = {
     "sentiment": SentimentScraper,
@@ -37,7 +51,7 @@ def _run_scraper(name: str) -> int:
     scraper_cls = _SCRAPERS[name]
     with scraper_cls() as scraper:
         published = scraper.run()
-    get_run_logger().info("%s published %d events", name, published)
+    _logger().info("%s published %d events", name, published)
     return published
 
 
@@ -83,7 +97,7 @@ def daily_brief_flow() -> dict[str, int | None]:
     from prism.ai.synthesis import refresh_all
 
     results = refresh_all()
-    get_run_logger().info("daily brief refresh: %s", results)
+    _logger().info("daily brief refresh: %s", results)
     return results
 
 
@@ -93,7 +107,7 @@ def alert_digest_flow() -> int:
     from prism.notify.digest import send_digest
 
     sent = send_digest()
-    get_run_logger().info("alert digest: emailed %d alert(s)", sent)
+    _logger().info("alert digest: emailed %d alert(s)", sent)
     return sent
 
 
