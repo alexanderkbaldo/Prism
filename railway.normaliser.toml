@@ -1,0 +1,22 @@
+# Railway config for the Prism NORMALISER service.
+#
+# This is a SEPARATE Railway service from the API, built from the same repo and
+# image. Railway config-as-code is per-service, so this service must be pointed
+# at THIS file: in the Railway dashboard, normaliser service -> Settings ->
+# Config-as-code path = railway.normaliser.toml. Otherwise it inherits the
+# repo-root railway.toml (the API config) and would run the web server instead.
+#
+# The normaliser is an always-on consumer of the Redis stream: it drains
+# RawEvents into Postgres (dedup, tag, sentiment, summary, anomaly check). It
+# needs DATABASE_URL and REDIS_URL (share the Postgres/Redis plugins with the
+# API). No healthcheck — it is a worker, not an HTTP server. Scale horizontally
+# by raising the service's replica count.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "docker/Dockerfile"
+
+[deploy]
+startCommand = "python -m prism.normaliser.worker"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

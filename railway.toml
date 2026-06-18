@@ -12,9 +12,18 @@
 # script binds uvicorn to 0.0.0.0 — this service's healthcheck connects over
 # IPv4, and an IPv6-only `::` bind fails the healthcheck even with uvicorn up.
 #
-# The background workers (normaliser, scorer, prefect-worker) are deployed as
-# separate Railway services using the same image with their own start commands —
-# see DEPLOY.md.
+# This file configures the API service ONLY. Railway's config-as-code is
+# per-service: a single railway.toml describes one service, and by default every
+# service created from this repo reads THIS file at the repo root — so a worker
+# created without its own config would wrongly run the API's "sh start-api.sh".
+#
+# The background workers are separate Railway services using the same image with
+# their own config files; point each service at its file via Settings ->
+# Config-as-code path:
+#   normaliser     -> railway.normaliser.toml   (python -m prism.normaliser.worker)
+#   scorer         -> python -m prism.ai.scorer        (own file or dashboard cmd)
+#   prefect-worker -> python -m prism.flows.dag        (own file or dashboard cmd)
+# See DEPLOY.md.
 #
 # IMPORTANT: a "Custom Start Command" set in the Railway dashboard OVERRIDES this
 # startCommand. Clear that field so this one is used.
