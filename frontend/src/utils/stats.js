@@ -2,10 +2,21 @@
 // Mirrors the dashboard's StatRow aggregation (trailing 7 days) so the compare
 // page and the dashboard never disagree.
 
-function isoDaysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
+// N days before an anchor date (YYYY-MM-DD), in UTC.
+function isoDaysBefore(anchor, n) {
+  const d = new Date(anchor + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - n);
   return d.toISOString().slice(0, 10);
+}
+
+// Freshest day present across all series categories. Windows anchor to this,
+// not the viewer's clock, so stats reflect the most recent week of data that
+// exists regardless of client clock skew or snapshot staleness.
+function latestDay(series) {
+  let m = null;
+  for (const pts of Object.values(series || {}))
+    for (const p of pts || []) if (!m || p.day > m) m = p.day;
+  return m;
 }
 
 function agg(points, from, to) {
@@ -45,8 +56,8 @@ const SIGNALS = [
 // Returns an array of { key, label, value, display, unit } for one company's
 // series. `value` is the comparable number (higher = stronger this week).
 export function computeStats(series) {
-  const from = isoDaysAgo(6);
-  const to = isoDaysAgo(0);
+  const to = latestDay(series) || new Date().toISOString().slice(0, 10);
+  const from = isoDaysBefore(to, 6);
   return SIGNALS.map((s) => {
     const a = agg(series?.[s.key], from, to);
     if (s.metric === "index") {

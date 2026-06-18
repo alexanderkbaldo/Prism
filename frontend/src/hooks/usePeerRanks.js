@@ -8,10 +8,19 @@ import { apiUrl } from "../api";
 
 const TICKERS = ["HOOD", "AFRM", "XYZ", "KLAR", "CHYM"];
 
-function isoDaysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
+// N days before an anchor date (YYYY-MM-DD), in UTC.
+function isoDaysBefore(anchor, n) {
+  const d = new Date(anchor + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - n);
   return d.toISOString().slice(0, 10);
+}
+
+// Freshest day present across a company's series categories.
+function latestDay(series) {
+  let m = null;
+  for (const pts of Object.values(series || {}))
+    for (const p of pts || []) if (!m || p.day > m) m = p.day;
+  return m;
 }
 
 function weekAgg(points, from, to) {
@@ -30,9 +39,9 @@ function weekAgg(points, from, to) {
   return { count, sentiment: sentN ? sentW / sentN : null };
 }
 
-function metricsFor(series) {
-  const from = isoDaysAgo(6);
-  const to = isoDaysAgo(0);
+function metricsFor(series, anchor) {
+  const to = anchor;
+  const from = isoDaysBefore(anchor, 6);
 
   const social = weekAgg(series.sentiment, from, to);
   const reviews = weekAgg(series.reviews, from, to);
@@ -68,9 +77,17 @@ export function usePeerRanks(ticker) {
       )
     ).then((results) => {
       if (cancelled) return;
+      const seriesByTicker = TICKERS.map((t, i) => results[i]?.series || {});
+      // One shared anchor (latest day across all companies) so every company is
+      // ranked over the same week, independent of the viewer's clock.
+      const anchor =
+        seriesByTicker.reduce((m, s) => {
+          const d = latestDay(s);
+          return d && (!m || d > m) ? d : m;
+        }, null) || new Date().toISOString().slice(0, 10);
       const map = {};
       TICKERS.forEach((t, i) => {
-        map[t] = metricsFor(results[i]?.series || {});
+        map[t] = metricsFor(seriesByTicker[i], anchor);
       });
       setAll(map);
     });

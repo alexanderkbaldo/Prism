@@ -5,10 +5,20 @@ import { useSeries } from "./useApi";
 // and hiring momentum (this week vs last). Shared by the page-top verdict chip
 // and the brief's bottom-line rating so the two never disagree.
 
-function isoDaysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
+// N days before an anchor date (YYYY-MM-DD), in UTC.
+function isoDaysBefore(anchor, n) {
+  const d = new Date(anchor + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - n);
   return d.toISOString().slice(0, 10);
+}
+
+// Freshest day present across all series categories; windows anchor to this
+// rather than the viewer's clock so the verdict tracks the data, not the clock.
+function latestDay(series) {
+  let m = null;
+  for (const pts of Object.values(series || {}))
+    for (const p of pts || []) if (!m || p.day > m) m = p.day;
+  return m;
 }
 
 function weekAgg(points, from, to) {
@@ -32,10 +42,11 @@ export function useVerdict(ticker) {
   if (!data) return null;
 
   const series = data.series || {};
-  const curFrom = isoDaysAgo(6);
-  const today = isoDaysAgo(0);
-  const priorFrom = isoDaysAgo(13);
-  const priorTo = isoDaysAgo(7);
+  const anchor = latestDay(series) || new Date().toISOString().slice(0, 10);
+  const curFrom = isoDaysBefore(anchor, 6);
+  const today = anchor; // most recent day with data
+  const priorFrom = isoDaysBefore(anchor, 13);
+  const priorTo = isoDaysBefore(anchor, 7);
 
   let sw = 0;
   let sn = 0;

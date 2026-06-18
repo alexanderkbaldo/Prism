@@ -30,12 +30,21 @@ const STATS = [
   },
 ];
 
-// ISO (YYYY-MM-DD) for `n` days before today. Series days are ISO date strings,
-// so lexicographic comparison is enough to bucket them into weeks.
-function isoDaysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
+// ISO (YYYY-MM-DD) `n` days before an anchor date, in UTC. Series days are ISO
+// date strings, so lexicographic comparison is enough to bucket them into weeks.
+function isoDaysBefore(anchor, n) {
+  const d = new Date(anchor + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - n);
   return d.toISOString().slice(0, 10);
+}
+
+// Freshest day present across all series categories; windows anchor to this
+// rather than the viewer's clock so the stats track the data, not the clock.
+function latestDay(series) {
+  let m = null;
+  for (const pts of Object.values(series || {}))
+    for (const p of pts || []) if (!m || p.day > m) m = p.day;
+  return m;
 }
 
 // Aggregate one category's daily points within [from, to] (inclusive ISO days).
@@ -99,11 +108,13 @@ export default function StatRow({ ticker, variant = "row" }) {
   const series = data?.series || {};
   const cards = variant === "cards";
 
-  // Trailing 7 days vs the 7 days before that.
-  const curFrom = isoDaysAgo(6);
-  const today = isoDaysAgo(0);
-  const priorFrom = isoDaysAgo(13);
-  const priorTo = isoDaysAgo(7);
+  // Trailing 7 days vs the 7 days before that, anchored to the most recent day
+  // with data (not the viewer's clock).
+  const anchor = latestDay(series) || new Date().toISOString().slice(0, 10);
+  const curFrom = isoDaysBefore(anchor, 6);
+  const today = anchor;
+  const priorFrom = isoDaysBefore(anchor, 13);
+  const priorTo = isoDaysBefore(anchor, 7);
 
   return (
     <div>
