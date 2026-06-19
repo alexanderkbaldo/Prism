@@ -116,6 +116,24 @@ CREATE TABLE IF NOT EXISTS company_earnings (
     note               TEXT                -- optional model rationale/source
 );
 
+-- Signal validation engine (Part 1): one composite weekly score per company.
+-- A transparent average of the available normalised signals for the week, plus
+-- a "net-positive" flag defined relative to the company's OWN trailing median
+-- (not an absolute threshold). Analysis infrastructure, not a prediction.
+-- Idempotent: re-running the computation upserts on (company, week_start).
+CREATE TABLE IF NOT EXISTS weekly_scores (
+    company         TEXT    NOT NULL,        -- canonical name
+    week_start      DATE    NOT NULL,        -- Monday of the ISO week (UTC)
+    composite_score DOUBLE PRECISION,        -- mean of normalised signals [0,1]
+    net_positive    BOOLEAN,                 -- > trailing median; NULL if too little history
+    signals_present INTEGER NOT NULL DEFAULT 0,  -- how many of the 5 signals had data
+    computed_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT pk_weekly_scores PRIMARY KEY (company, week_start)
+);
+
+CREATE INDEX IF NOT EXISTS idx_weekly_scores_company
+    ON weekly_scores (company, week_start);
+
 -- Convenience view: daily per-company sentiment + volume rollup.
 CREATE OR REPLACE VIEW daily_company_signals AS
 SELECT

@@ -453,3 +453,76 @@ def upsert_earnings(
             """,
             (company, ticker, next_earnings_date, note),
         )
+
+
+def weekly_signal_aggregates(company: str) -> list[dict]:
+    """Per-(week, category) aggregates across ALL weeks of a company's signals.
+
+    `week_start` is the Monday of each ISO week (UTC). For each category present
+    in a week it returns the row count plus the average sentiment and average
+    search-interest where applicable. The composite engine
+    (`prism/analysis/composite.py`) normalises and combines these. A category
+    only appears for a week if it has at least one signal that week — so a
+    missing category means "no data", which the engine treats as absent.
+    """
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                date_trunc('week', event_timestamp)::date AS week_start,
+                category,
+                count(*) AS n,
+                avg(sentiment) AS avg_sentiment,
+                avg((metrics->>'interest')::float)
+                    FILTER (WHERE metrics ? 'interest') AS avg_interest
+            FROM signals
+            WHERE upper(ticker) = upper(%(company)s)
+               OR lower(company) = lower(%(company)s)
+            GROUP BY week_start, category
+            ORDER BY week_start, category
+            """,
+            {"company": company},
+        )
+        return cur.fetchall()
+
+
+def upsert_weekly_score(
+    company: str,
+    week_start,
+    composite_score: float | None,
+    net_positive: bool | None,
+    signals_present: int,
+) -> None:
+    """Persist one company-week composite score idempotently."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO weekly_scores
+                (company, week_start, composite_score, net_positive,
+                 signals_present, computed_at)
+            VALUES (%s, %s, %s, %s, %s, now())
+            ON CONFLICT (company, week_start) DO UPDATE
+                SET composite_score = EXCLUDED.composite_score,
+                    net_positive    = EXCLUDED.net_positive,
+                    signals_present = EXCLUDED.signals_present,
+                    computed_at     = now()
+            """,
+            (company, week_start, composite_score, net_positive, signals_present),
+        )
+
+
+def get_weekly_scores(company: str) -> list[dict]:
+    """All stored weekly scores for a company, oldest week first."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT company, week_start, composite_score, net_positive,
+                   signals_present, computed_at
+            FROM weekly_scores
+            WHERE lower(company) = lower(%(company)s)
+               OR upper(company) = upper(%(company)s)
+            ORDER BY week_start
+            """,
+            {"company": company},
+        )
+        return cur.fetchall()
