@@ -138,12 +138,18 @@ def _serve() -> None:
 def main() -> None:
     if len(sys.argv) >= 3 and sys.argv[1] == "run":
         name = sys.argv[2]
+        # Manual/CLI runs bypass Prefect entirely (no server needed): call the
+        # underlying functions, not the @flow wrappers, which would try to reach
+        # a Prefect API and fail in a one-off console/shell. `_serve()` still
+        # registers the flows for the scheduled deployments.
         if name == "all":
-            print(ingest_all())
+            print({n: _run_scraper.fn(n) for n in _SCRAPERS})
         elif name == "brief":
-            print(daily_brief_flow())
+            from prism.ai.synthesis import refresh_all
+            print(refresh_all())
         elif name == "digest":
-            print(alert_digest_flow())
+            from prism.notify.digest import send_digest
+            print(send_digest())
         else:
             print({name: _run_scraper.fn(name)})
         return
