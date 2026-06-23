@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import NavBar from "./components/NavBar";
-import ChatLauncher from "./components/ChatLauncher";
+// TEMPORARILY DISABLED - re-enable once AI backend is stable.
+// The floating "Ask about [COMPANY]" chat widget is turned off site-wide.
+// Restore this import and its <ChatLauncher /> mount below to bring it back.
+// import ChatLauncher from "./components/ChatLauncher";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
-import Compare from "./pages/Compare";
+// TEMPORARILY DISABLED - re-enable once AI backend is stable.
+// The Compare page is feature-flagged off; /compare redirects to /dashboard.
+// Restore this import and the original <Route> below to bring it back.
+// import Compare from "./pages/Compare";
 import About from "./pages/About";
 
 export default function App() {
@@ -35,7 +41,11 @@ export default function App() {
         path="/dashboard"
         element={<Dashboard ticker={ticker} onTickerChange={setTicker} />}
       />
-      <Route path="/compare" element={<Compare />} />
+      {/* TEMPORARILY DISABLED - re-enable once AI backend is stable.
+          The Compare UI is hidden; /compare redirects to the dashboard so the
+          route still resolves. Restore the line below to bring it back:
+          <Route path="/compare" element={<Compare />} /> */}
+      <Route path="/compare" element={<Navigate to="/dashboard" replace />} />
       <Route path="/about" element={<About />} />
     </Routes>
   );
@@ -61,7 +71,10 @@ export default function App() {
           </AnimatePresence>
         )}
       </main>
-      <ChatLauncher ticker={ticker} />
+      {/* TEMPORARILY DISABLED - re-enable once AI backend is stable.
+          The "Ask about [COMPANY]" chat widget is off site-wide. Restore the
+          line below (and its import above) to bring it back:
+          <ChatLauncher ticker={ticker} /> */}
     </div>
   );
 }
