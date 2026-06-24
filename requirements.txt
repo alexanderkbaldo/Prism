@@ -18,3 +18,4 @@ openai>=1.40,<2
 # Source-specific clients (optional at runtime; imported lazily).
 praw>=7.7,<8            # Reddit
 pytrends>=4.9,<5        # Google Trends
+yfinance>=0.2.40,<1     # Historical prices for the validation backtest (analysis)

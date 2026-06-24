@@ -134,6 +134,37 @@ CREATE TABLE IF NOT EXISTS weekly_scores (
 CREATE INDEX IF NOT EXISTS idx_weekly_scores_company
     ON weekly_scores (company, week_start);
 
+-- Signal validation engine (Part 2): historical price backtest.
+-- Daily closing prices for the tracked tickers + the S&P 500 (^GSPC), pulled
+-- from yfinance. Idempotent: upsert on (ticker, date).
+CREATE TABLE IF NOT EXISTS daily_prices (
+    ticker      TEXT             NOT NULL,   -- e.g. HOOD, AFRM, XYZ, KLAR, CHYM, ^GSPC
+    date        DATE             NOT NULL,
+    close_price DOUBLE PRECISION NOT NULL,
+    CONSTRAINT pk_daily_prices PRIMARY KEY (ticker, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_daily_prices_ticker
+    ON daily_prices (ticker, date);
+
+-- One backtest summary per company. Tests whether weeks flagged net-positive by
+-- the 2-signal (Trends + Filings) backtestable composite outperformed the S&P
+-- over the following 5 trading days, vs the base rate across all tested weeks.
+-- Analysis infrastructure, NOT a prediction or recommendation.
+CREATE TABLE IF NOT EXISTS backtest_results (
+    company              TEXT PRIMARY KEY,        -- canonical name
+    ticker               TEXT,
+    total_weeks_tested   INTEGER NOT NULL DEFAULT 0,  -- candidate weeks w/ computable 5d return
+    net_positive_weeks   INTEGER NOT NULL DEFAULT 0,  -- of those, flagged net-positive
+    hit_rate             DOUBLE PRECISION,        -- % of net-positive weeks that outperformed
+    base_rate            DOUBLE PRECISION,        -- % of ALL tested weeks that outperformed
+    avg_relative_return  DOUBLE PRECISION,        -- mean (stock - S&P) 5d return on net-pos weeks
+    weeks_available      INTEGER NOT NULL DEFAULT 0,  -- weeks of composite history available
+    small_sample         BOOLEAN NOT NULL DEFAULT TRUE,  -- net_positive_weeks below robustness bar
+    data_quality         TEXT,                    -- human-readable caveat
+    computed_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Convenience view: daily per-company sentiment + volume rollup.
 CREATE OR REPLACE VIEW daily_company_signals AS
 SELECT

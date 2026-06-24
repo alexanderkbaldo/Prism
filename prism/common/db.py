@@ -526,3 +526,79 @@ def get_weekly_scores(company: str) -> list[dict]:
             {"company": company},
         )
         return cur.fetchall()
+
+
+def upsert_prices(ticker: str, rows: list[tuple]) -> int:
+    """Idempotently store (date, close) pairs for a ticker. Returns row count."""
+    if not rows:
+        return 0
+    with get_cursor(commit=True) as cur:
+        psycopg2.extras.execute_values(
+            cur,
+            """
+            INSERT INTO daily_prices (ticker, date, close_price)
+            VALUES %s
+            ON CONFLICT (ticker, date) DO UPDATE
+                SET close_price = EXCLUDED.close_price
+            """,
+            [(ticker, d, c) for d, c in rows],
+        )
+    return len(rows)
+
+
+def get_prices(ticker: str) -> list[dict]:
+    """All stored daily closes for a ticker, oldest first."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT date, close_price
+            FROM daily_prices
+            WHERE ticker = %s
+            ORDER BY date
+            """,
+            (ticker,),
+        )
+        return cur.fetchall()
+
+
+def upsert_backtest_result(result: dict) -> None:
+    """Persist one company's backtest summary idempotently."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO backtest_results
+                (company, ticker, total_weeks_tested, net_positive_weeks,
+                 hit_rate, base_rate, avg_relative_return, weeks_available,
+                 small_sample, data_quality, computed_at)
+            VALUES
+                (%(company)s, %(ticker)s, %(total_weeks_tested)s,
+                 %(net_positive_weeks)s, %(hit_rate)s, %(base_rate)s,
+                 %(avg_relative_return)s, %(weeks_available)s, %(small_sample)s,
+                 %(data_quality)s, now())
+            ON CONFLICT (company) DO UPDATE SET
+                ticker              = EXCLUDED.ticker,
+                total_weeks_tested  = EXCLUDED.total_weeks_tested,
+                net_positive_weeks  = EXCLUDED.net_positive_weeks,
+                hit_rate            = EXCLUDED.hit_rate,
+                base_rate           = EXCLUDED.base_rate,
+                avg_relative_return = EXCLUDED.avg_relative_return,
+                weeks_available     = EXCLUDED.weeks_available,
+                small_sample        = EXCLUDED.small_sample,
+                data_quality        = EXCLUDED.data_quality,
+                computed_at         = now()
+            """,
+            result,
+        )
+
+
+def get_backtest_results(company: str | None = None) -> list[dict]:
+    """Stored backtest summaries — one company, or all (alphabetical)."""
+    with get_cursor() as cur:
+        if company:
+            cur.execute(
+                "SELECT * FROM backtest_results WHERE lower(company) = lower(%s)",
+                (company,),
+            )
+        else:
+            cur.execute("SELECT * FROM backtest_results ORDER BY company")
+        return cur.fetchall()
