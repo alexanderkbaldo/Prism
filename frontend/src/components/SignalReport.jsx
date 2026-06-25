@@ -76,39 +76,99 @@ function metricsFor(series, key) {
 
 // ---- plain-English takeaways (the simple, Maya-facing layer) -----------------
 
+// Phrase a count's week-over-week move with the real numbers. `noun` is the
+// thing being counted ("mentions", "reviews", "postings"). `prior = count - delta`.
+function countMove(count, delta, noun) {
+  const prior = count - delta;
+  if (delta > 0) return `${noun} rose to ${count} from ${prior} last week`;
+  if (delta < 0) return `${noun} dropped to ${count} from ${prior} last week`;
+  return `${noun} held at ${count}, level with last week`;
+}
+
+// Tone words keep the existing 60/40 score thresholds; only the surrounding
+// sentence now carries the actual numbers.
+function tonePhrase(score, subject) {
+  if (score >= 60) return `${subject} held positive`;
+  if (score != null && score < 40) return `${subject} skewed negative`;
+  return `${subject} was mixed`;
+}
+
+// Contrast ("though") when the tone and the attention move disagree (upbeat tone
+// but fewer mentions, or weak tone but more); otherwise reinforce ("with").
+function toneCountConnector(score, delta) {
+  if (delta === 0) return ", and";
+  const favorable = score >= 60;
+  const unfavorable = score != null && score < 40;
+  const aligned = (favorable && delta > 0) || (unfavorable && delta < 0) || (!favorable && !unfavorable);
+  return aligned ? ", with" : ", though";
+}
+
 function takeaway(key, m) {
   switch (key) {
     case "sentiment": {
-      if (m.count === 0) return { line: "Quiet week, little social chatter.", stat: "0 mentions" };
-      const tone = m.score >= 60 ? "mostly positive" : m.score != null && m.score < 40 ? "mostly negative" : "mixed";
-      return { line: `Social chatter is ${tone}.`, stat: `${m.count} mentions · ${m.score ?? "–"}/100` };
+      if (m.count === 0) {
+        const prior = -m.delta; // count is 0, so prior = -delta
+        const line = prior > 0
+          ? `Quiet week, mentions fell to 0 from ${prior} last week.`
+          : "Quiet week, little social chatter.";
+        return { line, stat: "0 mentions" };
+      }
+      const phrase = tonePhrase(m.score, "Sentiment");
+      const connector = toneCountConnector(m.score, m.delta);
+      return {
+        line: `${phrase}${connector} ${countMove(m.count, m.delta, "mentions")}.`,
+        stat: `${m.count} mentions · ${m.score ?? "–"}/100`,
+      };
     }
     case "hiring": {
-      if (m.count === 0) return { line: "No new job postings this week.", stat: "0 postings" };
-      const trend = m.delta > 0 ? "picking up" : m.delta < 0 ? "slowing down" : "holding steady";
-      return { line: `Hiring is ${trend}.`, stat: `${m.count} new postings` };
+      if (m.count === 0) {
+        const prior = -m.delta;
+        const line = prior > 0
+          ? `No new job postings this week, down from ${prior} last week.`
+          : "No new job postings this week.";
+        return { line, stat: "0 postings" };
+      }
+      const prior = m.count - m.delta;
+      let line;
+      if (m.delta > 0) line = `Hiring postings rose to ${m.count} this week, up from ${prior} last week.`;
+      else if (m.delta < 0) line = `Hiring postings fell to ${m.count} this week, down from ${prior} last week.`;
+      else line = `Hiring postings held at ${m.count} this week, unchanged from last week.`;
+      return { line, stat: `${m.count} new postings` };
     }
     case "trends": {
       if (m.interest == null) return { line: "Not many people are searching for the company.", stat: "–" };
+      const i = Math.round(m.interest);
       const base = m.baselineInterest;
-      let level;
-      if (base != null) {
-        level = m.interest > base * 1.15 ? "running above its usual level"
-          : m.interest < base * 0.85 ? "running below its usual level"
-          : "in line with its usual level";
-      } else {
-        level = m.interest >= 66 ? "high" : m.interest >= 33 ? "moderate" : "low";
-      }
       const move = m.interestDelta > 3 ? ", and rising" : m.interestDelta < -3 ? ", and easing" : "";
+      let line;
+      if (base != null) {
+        const b = Math.round(base);
+        const rel = m.interest > base * 1.15 ? `above its 30-day average of ${b}`
+          : m.interest < base * 0.85 ? `below its 30-day average of ${b}`
+          : `in line with its 30-day average of ${b}`;
+        line = `Search interest sits at ${i}, ${rel}${move}.`;
+      } else {
+        line = `Search interest sits at ${i} of 100${move}.`;
+      }
       const stat = base != null
-        ? `${Math.round(m.interest)} of 100 · its 30-day norm is ${Math.round(base)}`
-        : `${Math.round(m.interest)} of 100`;
-      return { line: `Search attention is ${level}${move}.`, stat };
+        ? `${i} of 100 · its 30-day norm is ${Math.round(base)}`
+        : `${i} of 100`;
+      return { line, stat };
     }
     case "reviews": {
-      if (m.count === 0) return { line: "No new app reviews this week.", stat: "0 reviews" };
-      const tone = m.score >= 60 ? "mostly positive" : m.score != null && m.score < 40 ? "mostly negative" : "mixed";
-      return { line: `App reviews are ${tone}.`, stat: `${m.count} reviews · ${m.score ?? "–"}/100` };
+      if (m.count === 0) {
+        const prior = -m.delta;
+        const line = prior > 0
+          ? `No new app reviews this week, down from ${prior} last week.`
+          : "No new app reviews this week.";
+        return { line, stat: "0 reviews" };
+      }
+      const phrase = tonePhrase(m.score, "App reviews");
+      const connector = toneCountConnector(m.score, m.delta);
+      return {
+        line: `${phrase}${connector} ${countMove(m.count, m.delta, "reviews")}.`,
+        stat: `${m.count} reviews · ${m.score ?? "–"}/100`,
+      };
     }
     case "filings": {
       if (m.count === 0) return { line: "No new SEC filings.", stat: "0 filings" };
