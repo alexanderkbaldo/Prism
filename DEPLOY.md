@@ -141,3 +141,52 @@ Then open the Vercel URL — dashboard loads the snapshot, chat streams live.
 ./scripts/seed_remote.sh --reset backups/prism-<new>.sql.gz "<railway db url>"
 ```
 The site updates instantly (no redeploy needed — it's just data).
+
+---
+
+# Email subscriptions & automatic monitoring
+
+Two additions beyond the snapshot ship: public email subscriptions (double
+opt-in) and an automatically-scheduled, self-monitoring pipeline.
+
+### Email subscriptions (double opt-in)
+The site's signup form posts to `POST /subscribe`. The API stores the address
+unconfirmed and emails a confirmation link; clicking it (`GET /confirm?token=`)
+activates it. Every email carries a one-click unsubscribe link
+(`GET /unsubscribe?token=`). Subscribers choose any of: **daily digest**,
+**anomaly alerts**, **weekly summary**.
+
+Required env (on the API service AND the pipeline service):
+- `RESEND_API_KEY` — Resend key. Without it, signups are stored but no mail goes
+  out.
+- `ALERT_EMAIL_FROM` — a **verified** Resend sender. `onboarding@resend.dev`
+  only delivers to your own Resend account; to email real subscribers you must
+  verify a domain in Resend (e.g. `Prism <alerts@prismdata.co>`).
+- `API_PUBLIC_URL` — the API's public URL (e.g.
+  `https://prism-production-8655.up.railway.app`); confirm/unsubscribe links are
+  built from it.
+- `DASHBOARD_URL` — the Vercel URL (link inside emails).
+
+### Scheduled pipeline + monitoring
+`python -m prism.flows.pipeline` runs the whole daily cycle in one shot:
+scrapers → wait for the normaliser to drain → daily briefs → health monitor →
+subscriber emails (anomaly + daily; weekly on `WEEKLY_SUMMARY_WEEKDAY`). Deploy
+it as a **Railway cron service** (replaces the manual console refresh):
+
+1. New service from the same repo → Settings → Config-as-code path =
+   `railway.pipeline.toml` (runs `prism.flows.pipeline` daily at 06:00 UTC via
+   `cronSchedule`; restart policy NEVER so a finished run isn't relaunched).
+2. Give it the same variables as the API/normaliser (`DATABASE_URL`,
+   `REDIS_URL`, `ANTHROPIC_API_KEY`, scraper keys, and the email vars above).
+3. The always-on `normaliser` service must be deployed for the pipeline's
+   scraped events to reach Postgres.
+
+### Health monitoring
+Each scraper run is logged to `scraper_runs`. The pipeline runs a health check
+that flags any scraper that errored, produced 0 events, or has gone silent for
+more than `MONITOR_STALE_HOURS` (default 36), and emails `ALERT_EMAIL_TO` when
+something is wrong. The same report is exposed (open, no key) at `GET /monitor`
+for an external uptime probe:
+```
+curl -s 'https://<your-api>.up.railway.app/monitor' | jq .status
+```

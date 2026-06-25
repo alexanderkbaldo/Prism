@@ -381,6 +381,156 @@ def mark_alerts_notified(alert_ids: list[int]) -> None:
         )
 
 
+# --- Email subscribers (double opt-in) ---------------------------------------
+
+def upsert_subscriber(
+    email: str,
+    daily: bool,
+    anomaly: bool,
+    weekly: bool,
+    confirm_token: str,
+    unsub_token: str,
+) -> dict:
+    """Insert a subscriber or update an existing one's preferences.
+
+    A repeat signup updates the chosen mailing types. While the address is still
+    unconfirmed the confirm token is refreshed so a new confirmation link can be
+    sent; once confirmed, the existing tokens and confirmed state are preserved.
+    Returns the row (with `confirmed` so the caller knows whether to send a
+    confirmation email).
+    """
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO subscribers
+                (email, daily, anomaly, weekly, confirm_token, unsub_token)
+            VALUES
+                (%(email)s, %(daily)s, %(anomaly)s, %(weekly)s,
+                 %(confirm_token)s, %(unsub_token)s)
+            ON CONFLICT (email) DO UPDATE SET
+                daily   = EXCLUDED.daily,
+                anomaly = EXCLUDED.anomaly,
+                weekly  = EXCLUDED.weekly,
+                confirm_token = CASE WHEN subscribers.confirmed
+                                     THEN subscribers.confirm_token
+                                     ELSE EXCLUDED.confirm_token END
+            RETURNING id, email, confirmed, confirm_token, unsub_token
+            """,
+            {"email": email, "daily": daily, "anomaly": anomaly,
+             "weekly": weekly, "confirm_token": confirm_token,
+             "unsub_token": unsub_token},
+        )
+        return cur.fetchone()
+
+
+def confirm_subscriber(token: str) -> dict | None:
+    """Mark a subscriber confirmed by their confirm token (idempotent).
+
+    Returns the row (email + unsub_token) so the caller can show a friendly
+    confirmation page, or None if the token is unknown.
+    """
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE subscribers
+               SET confirmed = true,
+                   confirmed_at = COALESCE(confirmed_at, now())
+             WHERE confirm_token = %s
+            RETURNING email, unsub_token
+            """,
+            (token,),
+        )
+        return cur.fetchone()
+
+
+def unsubscribe_by_token(token: str) -> dict | None:
+    """Remove a subscriber by their permanent unsubscribe token.
+
+    Returns the deleted row's email, or None if the token is unknown.
+    """
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "DELETE FROM subscribers WHERE unsub_token = %s RETURNING email",
+            (token,),
+        )
+        return cur.fetchone()
+
+
+# Mailing type -> the boolean column gating it. Whitelist; never interpolate
+# arbitrary input into the SQL below.
+_SUB_KINDS = {"daily": "daily", "anomaly": "anomaly", "weekly": "weekly"}
+
+
+def confirmed_subscribers(kind: str) -> list[dict]:
+    """Confirmed subscribers who opted into a given mailing type.
+
+    `kind` is one of "daily", "anomaly", "weekly".
+    """
+    col = _SUB_KINDS[kind]
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT email, unsub_token
+            FROM subscribers
+            WHERE confirmed AND {col}
+            ORDER BY created_at
+            """,
+        )
+        return cur.fetchall()
+
+
+def mark_subscribers_emailed(emails: list[str]) -> None:
+    if not emails:
+        return
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE subscribers SET last_emailed_at = now() WHERE email = ANY(%s)",
+            (emails,),
+        )
+
+
+# --- Scraper monitoring ------------------------------------------------------
+
+def record_scraper_run(
+    scraper: str,
+    status: str,
+    events: int = 0,
+    error: str | None = None,
+    duration_ms: int | None = None,
+) -> None:
+    """Append one scraper-run record for the health monitor."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO scraper_runs (scraper, status, events, error, duration_ms)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (scraper, status, events, error, duration_ms),
+        )
+
+
+def latest_scraper_runs() -> list[dict]:
+    """The most recent run per scraper (newest first)."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT ON (scraper)
+                   scraper, status, events, error, duration_ms, created_at
+            FROM scraper_runs
+            ORDER BY scraper, created_at DESC
+            """,
+        )
+        return cur.fetchall()
+
+
+def latest_signal_at() -> "datetime | None":  # noqa: F821 - psycopg returns datetime
+    """Timestamp of the most recently ingested signal, for a freshness check."""
+    with get_cursor() as cur:
+        cur.execute("SELECT max(created_at) AS ts FROM signals")
+        row = cur.fetchone()
+        return row["ts"] if row else None
+
+
 def weekly_aggregates(company: str) -> list[dict]:
     """This-week vs last-week aggregates per category for correlation analysis."""
     with get_cursor() as cur:

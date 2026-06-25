@@ -46,11 +46,36 @@ _SCRAPERS = {
 }
 
 
+def _run_scraper_monitored(name: str) -> int:
+    """Run one scraper, recording the outcome to `scraper_runs` for the health
+    monitor. Re-raises on failure (so Prefect retries / callers can react) after
+    logging the error run."""
+    import time
+
+    from prism.common.db import record_scraper_run
+
+    t0 = time.monotonic()
+    try:
+        with _SCRAPERS[name]() as scraper:
+            published = scraper.run()
+    except Exception as exc:  # noqa: BLE001 - record then re-raise
+        dur = int((time.monotonic() - t0) * 1000)
+        try:
+            record_scraper_run(name, "error", 0, str(exc)[:500], dur)
+        except Exception:  # noqa: BLE001 - monitoring must never mask the error
+            log.exception("could not record scraper-run failure for %s", name)
+        raise
+    dur = int((time.monotonic() - t0) * 1000)
+    try:
+        record_scraper_run(name, "success", published, None, dur)
+    except Exception:  # noqa: BLE001 - DB monitoring is best-effort
+        log.exception("could not record scraper-run for %s", name)
+    return published
+
+
 @task(retries=2, retry_delay_seconds=60, log_prints=True)
 def _run_scraper(name: str) -> int:
-    scraper_cls = _SCRAPERS[name]
-    with scraper_cls() as scraper:
-        published = scraper.run()
+    published = _run_scraper_monitored(name)
     _logger().info("%s published %d events", name, published)
     return published
 
