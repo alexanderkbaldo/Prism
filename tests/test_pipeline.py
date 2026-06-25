@@ -25,6 +25,22 @@ def test_company_tagging_word_boundaries():
     assert tag_companies("I bought a new hoodie") == []
 
 
+def test_block_bare_name_tags_trends_and_filings():
+    # Regression: trends/filings events title with the bare canonical name, so
+    # "Block" must tag to Block (its name was missing from its own aliases,
+    # which dropped all Block trends + filings signals).
+    assert [c.name for c in tag_companies("Search interest: Block")] == ["Block"]
+    assert [c.name for c in tag_companies("Block filed 10-Q", None, "Block")] == ["Block"]
+    # The former Square name (bare) also maps to Block.
+    assert [c.name for c in tag_companies("Search interest: Square")] == ["Block"]
+
+
+def test_block_alias_respects_word_boundaries():
+    # The new bare "block" alias must not match inside other words.
+    assert tag_companies("blockchain rally today") == []
+    assert tag_companies("the roadblock was cleared") == []
+
+
 def test_lexicon_sentiment_direction():
     assert lexicon_score("strong growth, bullish buy") > 0
     assert lexicon_score("weak miss, bearish sell") < 0

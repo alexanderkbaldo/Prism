@@ -45,7 +45,11 @@ COMPANIES: tuple[Company, ...] = (
     Company(
         name="Block",
         ticker="XYZ",
-        aliases=("block inc", "block, inc", "square inc", "cash app", "$xyz", "$sq"),
+        # "block" / "square" (bare) are needed so trends/filings events titled
+        # with the canonical name ("Search interest: Block", "Block filed 10-Q")
+        # tag correctly — every other company's bare name is already an alias.
+        aliases=("block", "block inc", "block, inc", "square", "square inc",
+                 "cash app", "$xyz", "$sq"),
         apple_app_id="711923939",  # Cash App
         play_package="com.squareup.cash",
         cik="0001512673",
