@@ -25,8 +25,13 @@
 #   prefect-worker -> python -m prism.flows.dag        (own file or dashboard cmd)
 # See DEPLOY.md.
 #
-# IMPORTANT: a "Custom Start Command" set in the Railway dashboard OVERRIDES this
-# startCommand. Clear that field so this one is used.
+# IMPORTANT: this file is config-as-code and is applied on every deploy, so its
+# startCommand takes precedence over a "Custom Start Command" typed in the Railway
+# dashboard (the dashboard field is effectively ignored while this file is the
+# service's config). To run a different command for a service, give that service
+# its OWN config file and point it there (Settings -> Config-as-code path), e.g.
+# railway.normaliser.toml / railway.cron.toml — do not rely on the dashboard
+# start-command field to override this one.
 
 [build]
 builder = "DOCKERFILE"

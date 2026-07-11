@@ -1,0 +1,37 @@
+# Railway config for the Prism CRON service (daily pipeline refresh).
+#
+# This is a SEPARATE Railway service from the API, built from the same repo and
+# image. Railway config-as-code is per-service, so this service MUST be pointed
+# at THIS file: Railway dashboard -> prism-cron service -> Settings ->
+# Config-as-code path = railway.cron.toml. Otherwise it inherits the repo-root
+# railway.toml (the API config) and runs "sh start-api.sh" (migrate + uvicorn)
+# with a /healthz healthcheck — exactly the wrong thing for a cron job. The
+# repo-root railway.toml's [deploy].startCommand is applied on every deploy and
+# takes precedence over any "Custom Start Command" typed in the dashboard, which
+# is why the dashboard command was ignored until this file exists and is
+# selected.
+#
+# Runs the ingest-all scrapers then regenerates briefs, once, on a schedule.
+# `cronSchedule` makes Railway run the container on that cron, then let it exit.
+# No healthcheckPath — this is a batch job, not an HTTP server; a healthcheck
+# would mark the (correctly) exited container as failed. restartPolicyType is
+# NEVER so a clean exit is not treated as a crash and relooped.
+#
+# Shares the Postgres/Redis plugins with the API (needs DATABASE_URL, REDIS_URL,
+# ANTHROPIC_API_KEY for the brief step, plus any scraper keys). It does NOT run
+# migrations — the API service owns the schema (see DEPLOY.md); the tables must
+# already exist. Uses `sh -c` so the shell sequences the two steps (the same
+# reason start-api.sh is a script: Railway may exec the command without a shell,
+# turning "&&" into a literal arg).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "docker/Dockerfile"
+
+[deploy]
+startCommand = "sh -c 'python -m prism.flows.dag run all && python -m prism.flows.dag run brief'"
+# 06:00 Miami time. Railway crons are UTC; 10:00 UTC = 06:00 EDT (UTC-4, summer).
+# Note: during EST (UTC-5, winter) this fires at 05:00 Miami — Railway cron has no
+# timezone/DST support, so adjust to "0 11 * * *" if you want a fixed 6am in winter.
+cronSchedule = "0 10 * * *"
+restartPolicyType = "NEVER"
