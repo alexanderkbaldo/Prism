@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import Footer from "../components/Footer";
+import SubscribeForm from "../components/SubscribeForm";
 import { Reveal, RevealGroup, RevealChild, CountUp, EASE } from "../anim";
 
 const MOCK_CHIPS = [
@@ -198,6 +199,27 @@ export default function Home() {
               </RevealChild>
             ))}
           </RevealGroup>
+        </div>
+      </section>
+
+      {/* SECTION 6b, Subscribe (sand) */}
+      <section style={s.section}>
+        <div style={{ ...s.inner, maxWidth: "720px", textAlign: "center" }}>
+          <Reveal><Label>Stay ahead</Label></Reveal>
+          <Reveal y={40} duration={0.8} delay={0.05}>
+            <h2 style={{ ...s.headline2, marginBottom: "8px" }}>
+              Get the signals in your inbox.
+            </h2>
+          </Reveal>
+          <Reveal delay={0.18}>
+            <p style={{ ...s.body, margin: "0 auto 36px", maxWidth: "480px" }}>
+              Subscribe for a daily digest, real-time anomaly alerts, or a
+              weekly summary across all five fintechs.
+            </p>
+          </Reveal>
+          <Reveal delay={0.28}>
+            <SubscribeForm />
+          </Reveal>
         </div>
       </section>
 

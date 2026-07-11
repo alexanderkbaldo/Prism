@@ -1,0 +1,30 @@
+# Railway config for the Prism SCHEDULED PIPELINE (cron job).
+#
+# A SEPARATE Railway service from the same repo/image, run on a daily cron. Point
+# it at THIS file: pipeline service -> Settings -> Config-as-code path =
+# railway.pipeline.toml. Otherwise it inherits the repo-root railway.toml (the
+# API config) and would run the web server instead.
+#
+# Railway runs `cronSchedule` services as one-shot jobs: at each scheduled time
+# it starts the container, runs startCommand to completion, then stops it (so it
+# is NOT always-on and does NOT need a healthcheck). `python -m
+# prism.flows.pipeline` runs every scraper, waits for the normaliser to drain,
+# generates the daily briefs, runs the health monitor, and sends subscriber
+# emails (anomaly + daily, plus the weekly summary on WEEKLY_SUMMARY_WEEKDAY).
+#
+# Needs the same env as the API/normaliser: DATABASE_URL, REDIS_URL (shared
+# plugins), ANTHROPIC_API_KEY (briefs), RESEND_API_KEY + ALERT_EMAIL_FROM +
+# API_PUBLIC_URL + DASHBOARD_URL (emails), and any scraper keys (SERPAPI_KEY...).
+#
+# The cron below is 06:00 UTC daily; the always-on normaliser drains the stream
+# the pipeline produces. Restart policy is NEVER so a finished run isn't
+# relaunched as if it had crashed.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "docker/Dockerfile"
+
+[deploy]
+startCommand = "python -m prism.flows.pipeline"
+cronSchedule = "0 6 * * *"
+restartPolicyType = "NEVER"

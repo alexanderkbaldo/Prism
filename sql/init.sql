@@ -165,6 +165,46 @@ CREATE TABLE IF NOT EXISTS backtest_results (
     computed_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Email subscribers (double opt-in). The public signup form (POST /subscribe)
+-- inserts an UNCONFIRMED row and emails a confirmation link; clicking it
+-- (GET /confirm?token=) flips `confirmed` to true. Only confirmed rows ever
+-- receive mail. Each subscriber also carries a permanent `unsub_token` for the
+-- one-click unsubscribe link (GET /unsubscribe?token=) that every email must
+-- include. `daily`/`anomaly`/`weekly` are the mailing types they opted into.
+CREATE TABLE IF NOT EXISTS subscribers (
+    id              BIGSERIAL PRIMARY KEY,
+    email           TEXT        NOT NULL,
+    daily           BOOLEAN     NOT NULL DEFAULT true,   -- daily digest
+    anomaly         BOOLEAN     NOT NULL DEFAULT true,   -- >1σ anomaly alerts
+    weekly          BOOLEAN     NOT NULL DEFAULT false,  -- weekly summary
+    confirmed       BOOLEAN     NOT NULL DEFAULT false,  -- double opt-in done
+    confirm_token   TEXT        NOT NULL,                -- single-use confirm link
+    unsub_token     TEXT        NOT NULL,                -- permanent unsubscribe link
+    confirmed_at    TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_emailed_at TIMESTAMPTZ,
+    CONSTRAINT uq_subscribers_email UNIQUE (email)
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscribers_confirmed ON subscribers (confirmed);
+
+-- Scraper run log for automatic monitoring. The scheduled pipeline records one
+-- row per scraper invocation (status, events produced, duration, any error);
+-- the health check (prism/notify/monitor.py) reads the latest row per scraper
+-- to detect a failure or a scraper that has gone silent (stale).
+CREATE TABLE IF NOT EXISTS scraper_runs (
+    id          BIGSERIAL PRIMARY KEY,
+    scraper     TEXT        NOT NULL,
+    status      TEXT        NOT NULL,            -- 'success' | 'error'
+    events      INTEGER     NOT NULL DEFAULT 0,  -- events published to Redis
+    error       TEXT,                            -- truncated message if failed
+    duration_ms INTEGER,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_scraper_runs_scraper
+    ON scraper_runs (scraper, created_at DESC);
+
 -- Convenience view: daily per-company sentiment + volume rollup.
 CREATE OR REPLACE VIEW daily_company_signals AS
 SELECT

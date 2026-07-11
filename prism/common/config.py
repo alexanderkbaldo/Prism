@@ -150,6 +150,25 @@ class Settings(BaseSettings):
     dashboard_url: str = Field(default="http://localhost:5173")
     alert_digest_max: int = Field(default=50)
 
+    # --- Email subscriptions (double opt-in) ---------------------------
+    # Public, browser-driven signups (POST /subscribe). Each new address gets a
+    # confirmation email; only confirmed addresses receive mailings. The confirm
+    # and unsubscribe links point back at THIS API, so `api_public_url` must be
+    # the API's externally reachable URL (e.g. https://prism-...up.railway.app).
+    api_public_url: str = Field(default="http://localhost:8000")
+    # Day of week the weekly summary goes out (0=Monday … 6=Sunday). The
+    # scheduled pipeline only sends the weekly mail when it runs on this day.
+    weekly_summary_weekday: int = Field(default=0)
+
+    # --- Scheduled pipeline & monitoring -------------------------------
+    # After the scrapers publish to Redis, the normaliser drains the stream into
+    # Postgres asynchronously. The scheduled pipeline waits this long before
+    # generating briefs so they see the freshly-ingested signals.
+    pipeline_drain_seconds: int = Field(default=90)
+    # Health check: a scraper (or the signal feed overall) is "stale" if it has
+    # produced nothing newer than this many hours. The monitor emails an admin.
+    monitor_stale_hours: int = Field(default=36)
+
 
 @lru_cache
 def get_settings() -> Settings:

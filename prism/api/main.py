@@ -20,7 +20,7 @@ from typing import Any
 
 from fastapi import Depends, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 
 from prism.api.security import RateLimiter, require_api_key
@@ -54,6 +54,9 @@ PROTECTED = [Depends(require_api_key),
 CHAT_PROTECTED = [Depends(require_api_key),
                   Depends(RateLimiter(settings.chat_rate_limit_per_minute, 60,
                                       "chat"))]
+# Public signup is rate-limited but NOT key-gated: it's a browser form, and a
+# stricter per-IP bucket keeps it from being abused to spam confirmation emails.
+SUBSCRIBE_PROTECTED = [Depends(RateLimiter(10, 60, "subscribe"))]
 
 
 @app.get("/healthz")
@@ -232,6 +235,68 @@ def chat(req: ChatRequest) -> StreamingResponse:
             yield "[error] Something went wrong generating the answer."
 
     return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
+
+
+class SubscribeRequest(BaseModel):
+    email: str
+    daily: bool = True
+    anomaly: bool = True
+    weekly: bool = False
+
+
+@app.post("/subscribe", dependencies=SUBSCRIBE_PROTECTED)
+def subscribe(req: SubscribeRequest) -> dict[str, Any]:
+    """Public email signup. Stores the address (unconfirmed) and sends a
+    double-opt-in confirmation email. Returns {ok, message}."""
+    try:
+        from prism.notify.subscriptions import subscribe as do_subscribe
+
+        return do_subscribe(req.email, req.daily, req.anomaly, req.weekly)
+    except Exception:  # noqa: BLE001 - DB/email down shouldn't 500 the form
+        log.exception("subscribe failed")
+        return {"ok": False,
+                "message": "Something went wrong. Please try again later."}
+
+
+@app.get("/confirm", response_class=HTMLResponse)
+def confirm(token: str = Query(...)) -> HTMLResponse:
+    """Confirm a subscription from the emailed link; returns a branded page."""
+    from prism.notify.subscriptions import confirm as do_confirm, confirm_page
+
+    try:
+        ok = do_confirm(token)
+    except Exception:  # noqa: BLE001
+        log.exception("confirm failed")
+        ok = False
+    return HTMLResponse(confirm_page(ok), status_code=200 if ok else 400)
+
+
+@app.get("/unsubscribe", response_class=HTMLResponse)
+def unsubscribe(token: str = Query(...)) -> HTMLResponse:
+    """One-click unsubscribe from the emailed link; returns a branded page."""
+    from prism.notify.subscriptions import (
+        unsubscribe as do_unsubscribe,
+        unsubscribe_page,
+    )
+
+    try:
+        ok = do_unsubscribe(token)
+    except Exception:  # noqa: BLE001
+        log.exception("unsubscribe failed")
+        ok = False
+    return HTMLResponse(unsubscribe_page(ok), status_code=200 if ok else 400)
+
+
+@app.get("/monitor")
+def monitor() -> dict[str, Any]:
+    """Scraper health + data-freshness report (open, for uptime probes)."""
+    try:
+        from prism.notify.monitor import check_health
+
+        return check_health()
+    except Exception:  # noqa: BLE001 - never let the probe itself 500
+        log.exception("health check failed")
+        return {"status": "unknown", "error": "health check failed"}
 
 
 def _serialise(row: dict) -> dict:
