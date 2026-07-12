@@ -22,6 +22,21 @@ const COMPANIES = [
   ["Chime", "CHYM"],
 ];
 
+const USE_CASES = [
+  [
+    "Prep for the earnings call",
+    "Scan a company's five signals for where they diverge from the consensus story, weeks before the print.",
+  ],
+  [
+    "Catch an inflection early",
+    "Anomaly alerts fire when a signal breaks 2σ from its own pattern, so you're looking while the turn is still forming.",
+  ],
+  [
+    "Read a company against its peers",
+    "Peer standing ranks each fintech on buzz, hiring, and sentiment, so you can see who's actually gaining ground.",
+  ],
+];
+
 function MockCard() {
   return (
     <div className="home-mockcard" style={s.mockCard}>
@@ -175,6 +190,38 @@ export default function Home() {
               upside despite recent pullback."
             </blockquote>
             <cite style={s.quoteCite}>Prism research brief, Robinhood</cite>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* SECTION 5b, Put it to work (dark) */}
+      <section style={{ ...s.section, ...s.dark }}>
+        <div style={s.inner}>
+          <Reveal><Label dark>Put it to work</Label></Reveal>
+          <Reveal y={40} duration={0.8} delay={0.05}>
+            <h2 style={{ ...s.headline2, color: "var(--bg)", maxWidth: "680px" }}>
+              Three ways to read the signals.
+            </h2>
+          </Reveal>
+          <Reveal delay={0.2}>
+            <p style={{ ...s.body, color: "rgba(231,220,203,0.72)", maxWidth: "560px" }}>
+              The dashboard isn't a scoreboard to glance at, it's a starting point
+              for a view of your own. Here's where analysts begin.
+            </p>
+          </Reveal>
+          <RevealGroup className="company-grid" style={s.useCaseGrid} amount={0.2}>
+            {USE_CASES.map(([title, body], i) => (
+              <RevealChild className="track-card" key={title} style={s.useCaseCard}>
+                <span style={s.useCaseNum}>{String(i + 1).padStart(2, "0")}</span>
+                <div style={s.useCaseTitle}>{title}</div>
+                <p style={s.useCaseBody}>{body}</p>
+              </RevealChild>
+            ))}
+          </RevealGroup>
+          <Reveal delay={0.3}>
+            <Link to="/guide" className="home-guide-link" style={s.guideLink}>
+              See how to read a company &rarr;
+            </Link>
           </Reveal>
         </div>
       </section>
@@ -511,5 +558,49 @@ const s = {
     letterSpacing: "0.08em",
     color: "var(--faint)",
     marginTop: "3px",
+  },
+
+  // ---- Put it to work (use cases, on dark) ----
+  useCaseGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: "20px",
+    marginTop: "48px",
+  },
+  useCaseCard: {
+    display: "block",
+    background: "rgba(231, 220, 203, 0.03)",
+    border: "1px solid rgba(231, 220, 203, 0.16)",
+    borderRadius: "12px",
+    padding: "28px 26px",
+  },
+  useCaseNum: {
+    fontFamily: "var(--serif)",
+    fontSize: "15px",
+    letterSpacing: "0.06em",
+    color: "var(--sage)",
+    display: "block",
+    marginBottom: "16px",
+  },
+  useCaseTitle: {
+    fontFamily: "var(--serif)",
+    fontSize: "22px",
+    fontWeight: 400,
+    lineHeight: 1.2,
+    color: "var(--bg)",
+  },
+  useCaseBody: {
+    fontSize: "15px",
+    lineHeight: 1.6,
+    color: "rgba(231, 220, 203, 0.7)",
+    marginTop: "12px",
+  },
+  guideLink: {
+    display: "inline-block",
+    marginTop: "40px",
+    color: "var(--sage)",
+    textDecoration: "none",
+    fontSize: "15px",
+    fontWeight: 500,
   },
 };
