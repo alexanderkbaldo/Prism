@@ -161,6 +161,16 @@ textarea:focus-visible,
   box-shadow: var(--shadow-card);
   border-color: var(--sage) !important;
 }
+/* Investments scoreboard: clickable rows highlight on hover/focus. */
+.scoreboard-row {
+  transition: background 0.15s ease;
+}
+.scoreboard-row:hover,
+.scoreboard-row:focus-visible {
+  background: var(--surface);
+  outline: none;
+}
+
 /* Dark hero product card: subtle lift on hover (keeps its slight tilt). */
 .home-mockcard {
   transition: transform 0.2s ease, box-shadow 0.2s ease;

@@ -51,6 +51,20 @@ def run_pipeline() -> dict:
         log.exception("brief refresh failed")
         summary["briefs"] = None
 
+    # 3b. Signal validation engine — refresh the historical backtest so the
+    # Investments tab's track-record numbers stay current. Isolated: a yfinance
+    # hiccup or thin price history must not block briefs or emails.
+    try:
+        from prism.analysis.backtest import pull_and_store_prices, run_and_store_all
+        from prism.analysis.composite import compute_and_store_all
+
+        pull_and_store_prices()          # yfinance → daily_prices (idempotent)
+        compute_and_store_all()          # → weekly_scores (5-signal composite)
+        summary["validation"] = run_and_store_all()  # → backtest_results
+    except Exception:  # noqa: BLE001
+        log.exception("signal validation engine failed")
+        summary["validation"] = None
+
     # 4. Health monitor (emails admin on degradation).
     try:
         from prism.notify.monitor import run_monitor

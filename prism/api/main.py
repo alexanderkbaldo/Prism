@@ -200,6 +200,44 @@ def get_earnings(
     return {"source": "mock", **_mock_earnings(company)}
 
 
+@app.get("/backtest", dependencies=PROTECTED)
+def get_backtest(
+    company: str | None = Query(None, description="Ticker or name; omit for all"),
+) -> dict[str, Any]:
+    """Historical signal backtest summaries: on the weeks the alternative-data
+    signals flagged as net-positive, did the stock beat the S&P over the next 5
+    trading days? Reports hit rate vs base rate. Analysis infrastructure, NOT a
+    prediction or recommendation."""
+    try:
+        from prism.common.db import get_backtest_results
+
+        rows = get_backtest_results(_canonical_name(company) if company else None)
+        return {"source": "db", "count": len(rows),
+                "results": [_serialise(r) for r in rows]}
+    except Exception:  # noqa: BLE001 - DB down; serve clearly-labelled mock
+        log.exception("backtest query failed; returning mock data")
+        rows = _mock_backtest(company)
+        return {"source": "mock", "count": len(rows), "results": rows}
+
+
+@app.get("/weekly", dependencies=PROTECTED)
+def get_weekly(
+    company: str = Query(..., description="Ticker (HOOD) or name (Robinhood)"),
+) -> dict[str, Any]:
+    """Composite weekly signal scores for a company, oldest week first."""
+    try:
+        from prism.common.db import get_weekly_scores
+
+        rows = get_weekly_scores(_canonical_name(company))
+        return {"source": "db", "company": company, "count": len(rows),
+                "scores": [_serialise(r) for r in rows]}
+    except Exception:  # noqa: BLE001 - DB down; serve labelled mock
+        log.exception("weekly query failed; returning mock data")
+        rows = _mock_weekly(company)
+        return {"source": "mock", "company": company, "count": len(rows),
+                "scores": rows}
+
+
 class ChatTurn(BaseModel):
     role: str  # "user" or "assistant"
     text: str = ""
@@ -299,6 +337,15 @@ def monitor() -> dict[str, Any]:
         return {"status": "unknown", "error": "health check failed"}
 
 
+def _canonical_name(company: str) -> str:
+    """Resolve a ticker or name to the canonical company name used as the key in
+    weekly_scores / backtest_results (both are stored by name)."""
+    match = next((c for c in COMPANIES
+                  if (c.ticker and c.ticker.upper() == company.upper())
+                  or c.name.lower() == company.lower()), None)
+    return match.name if match else company
+
+
 def _serialise(row: dict) -> dict:
     """Make a DB row JSON-safe (datetimes -> ISO strings)."""
     out = dict(row)
@@ -369,6 +416,44 @@ def _mock_earnings(company: str) -> dict:
         "days_until": days_until,
         "source_searched_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def _mock_backtest(company: str | None) -> list[dict]:
+    """Clearly-labelled sample backtest rows so the tab renders without Postgres."""
+    samples = [
+        {"company": c.name, "ticker": c.ticker,
+         "total_weeks_tested": 18, "net_positive_weeks": 7,
+         "hit_rate": 0.57, "base_rate": 0.50,
+         "avg_relative_return": 0.008, "weeks_available": 20,
+         "small_sample": True,
+         "data_quality": "mock data — Postgres not reachable; illustrative only, "
+                         "not a real backtest."}
+        for c in COMPANIES
+    ]
+    if company:
+        samples = [s for s in samples
+                   if company.upper() in (s["ticker"], (s["company"] or "").upper())]
+    return samples
+
+
+def _mock_weekly(company: str) -> list[dict]:
+    """Deterministic sample weekly composite scores so the sparkline renders."""
+    import math
+
+    today = datetime.now(timezone.utc).date()
+    match = next((c for c in COMPANIES
+                  if c.ticker == company.upper()
+                  or c.name.lower() == company.lower()), None)
+    name = match.name if match else company
+    out = []
+    for i in range(8):
+        # Monday of each of the last 8 weeks (oldest first).
+        wk = today - timedelta(days=today.weekday() + 7 * (7 - i))
+        score = round(0.5 + 0.18 * math.sin(i / 2), 3)
+        out.append({"company": name, "week_start": wk.isoformat(),
+                    "composite_score": score, "net_positive": score > 0.5,
+                    "signals_present": 3})
+    return out
 
 
 def _mock_series(days: int) -> dict[str, list]:

@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 // import Compare from "./pages/Compare";
 import About from "./pages/About";
 import Guide from "./pages/Guide";
+import Investments from "./pages/Investments";
 
 export default function App() {
   // Lifted so the chat launcher (global) stays in sync with the dashboard's
@@ -47,6 +48,10 @@ export default function App() {
           route still resolves. Restore the line below to bring it back:
           <Route path="/compare" element={<Compare />} /> */}
       <Route path="/compare" element={<Navigate to="/dashboard" replace />} />
+      <Route
+        path="/investments"
+        element={<Investments ticker={ticker} onTickerChange={setTicker} />}
+      />
       <Route path="/guide" element={<Guide />} />
       <Route path="/about" element={<About />} />
     </Routes>

@@ -114,3 +114,38 @@ export function useCorrelation(ticker) {
 
   return { data, loading, error };
 }
+
+// Historical backtest summaries for every company (or one, if `ticker` given).
+export function useBacktest(ticker = null) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    apiFetch(`/backtest${ticker ? `?company=${ticker}` : ""}`)
+      .then(setData)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [ticker]);
+
+  return { data, loading, error };
+}
+
+// Composite weekly signal scores for one company (oldest week first).
+export function useWeeklyScores(ticker) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!ticker) return;
+    setLoading(true);
+    apiFetch(`/weekly?company=${ticker}`)
+      .then(setData)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [ticker]);
+
+  return { data, loading, error };
+}
