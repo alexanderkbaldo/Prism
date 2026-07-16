@@ -14,24 +14,15 @@ function dayWord(n) {
   return `${n} ${Math.abs(n) === 1 ? "day" : "days"}`;
 }
 
-// Client-side fallback so the indicator always renders, even if the API (and
-// its own mock fallback) is unreachable. Mirrors the backend mock: ~46 days out.
-const FALLBACK_DAYS = 46;
-function fallbackEarnings() {
-  const d = new Date();
-  d.setDate(d.getDate() + FALLBACK_DAYS);
-  const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return { next_earnings_date: iso, days_until: FALLBACK_DAYS };
-}
-
 export default function EarningsLine({ ticker }) {
   const { data } = useEarnings(ticker);
-  // Use the API result when present; otherwise fall back to a mock date so the
-  // line always shows something regardless of backend status.
-  const source =
-    data?.next_earnings_date && data?.days_until != null ? data : fallbackEarnings();
-  const date = source.next_earnings_date;
-  const days = source.days_until;
+  const date = data?.next_earnings_date;
+  const days = data?.days_until;
+  // Show the actual per-company earnings date. If it isn't available yet
+  // (loading, or the backend couldn't determine it) render nothing rather than
+  // a fabricated placeholder — a fixed fallback date looked identical for every
+  // company and hid the real, distinct dates the API returns.
+  if (!date || days == null) return null;
 
   const when = formatDate(date);
 

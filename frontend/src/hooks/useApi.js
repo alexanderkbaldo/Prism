@@ -88,11 +88,19 @@ export function useEarnings(ticker) {
 
   useEffect(() => {
     if (!ticker) return;
+    // `active` guards against out-of-order responses: if the company is switched
+    // again before this request resolves, a stale response must not overwrite
+    // the newer company's data. Also clear data up front so the previous
+    // company's date never lingers on screen during the switch.
+    let active = true;
+    setData(null);
     setLoading(true);
+    setError(null);
     apiFetch(`/earnings?company=${ticker}`)
-      .then(setData)
-      .catch(setError)
-      .finally(() => setLoading(false));
+      .then((d) => { if (active) setData(d); })
+      .catch((e) => { if (active) setError(e); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [ticker]);
 
   return { data, loading, error };
