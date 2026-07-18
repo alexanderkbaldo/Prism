@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import CompanySwitcher from "../components/CompanySwitcher";
 import StatRow from "../components/StatRow";
 import SignalReport from "../components/SignalReport";
@@ -75,6 +76,24 @@ function LastUpdated({ ticker }) {
 }
 
 export default function Dashboard({ ticker, onTickerChange }) {
+  // Deep links from the Guide (/dashboard#read, #signals, #anomalies). App
+  // scrolls to top on every navigation; when a hash is present, the anchor
+  // wins (effects run after App's layout effect).
+  const location = useLocation();
+  useEffect(() => {
+    if (!location.hash) return;
+    const scroll = () => {
+      const el = document.getElementById(location.hash.slice(1));
+      if (el) el.scrollIntoView({ block: "start" });
+    };
+    // Charts and briefs load async and grow the page above the anchor, so
+    // re-assert the position a couple of times as the content settles.
+    scroll();
+    const t1 = setTimeout(scroll, 450);
+    const t2 = setTimeout(scroll, 1200);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [location.hash]);
+
   return (
     <div className="page" style={styles.column}>
       <div className="switch-row" style={styles.switchRow}>
@@ -82,15 +101,21 @@ export default function Dashboard({ ticker, onTickerChange }) {
         <CompanySwitcher ticker={ticker} onChange={onTickerChange} />
       </div>
 
-      <Hero ticker={ticker} />
-      <LastUpdated ticker={ticker} />
-      <Reveal><StatRow ticker={ticker} variant="cards" /></Reveal>
-      {/* Plain-English read per signal, each paired with its chart. */}
-      <Reveal style={styles.briefWrap}>
-        <SignalReport ticker={ticker} />
-      </Reveal>
+      <div id="read" style={styles.anchor}>
+        <Hero ticker={ticker} />
+        <LastUpdated ticker={ticker} />
+      </div>
+      <div id="signals" style={styles.anchor}>
+        <Reveal><StatRow ticker={ticker} variant="cards" /></Reveal>
+        {/* Plain-English read per signal, each paired with its chart. */}
+        <Reveal style={styles.briefWrap}>
+          <SignalReport ticker={ticker} />
+        </Reveal>
+      </div>
       <Reveal><SignalCorrelation ticker={ticker} /></Reveal>
-      <Reveal><AnomalyLine ticker={ticker} /></Reveal>
+      <div id="anomalies" style={styles.anchor}>
+        <Reveal><AnomalyLine ticker={ticker} /></Reveal>
+      </div>
 
       <Footer />
     </div>
@@ -110,6 +135,8 @@ const styles = {
     paddingTop: "32px",
   },
   hero: { marginTop: "48px" },
+  // Keep anchored sections clear of the sticky nav when deep-linked.
+  anchor: { scrollMarginTop: "84px" },
   metaRow: {
     marginTop: "18px",
     display: "flex",

@@ -1,17 +1,14 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  LineChart, Line, YAxis, Tooltip, ResponsiveContainer,
-} from "recharts";
 import Footer from "../components/Footer";
 import Disclaimer from "../components/Disclaimer";
+import InfoTip from "../components/InfoTip";
+import SubscribeForm from "../components/SubscribeForm";
 import { Reveal } from "../anim";
 import { useScoreboard } from "../hooks/useScoreboard";
 import { useEarningsCalendar } from "../hooks/useEarningsCalendar";
 import { useBacktest, useWeeklyScores } from "../hooks/useApi";
-
-// Palette (hex; recharts sets SVG attributes that don't resolve CSS vars).
-const C = { sage: "#6B8F71", ink: "#1A2018", hairline: "#CBBDA8", faint: "#8A7D6B", bg: "#E7DCCB" };
+import { gloss } from "../utils/glossary";
 
 // ---- formatting helpers -----------------------------------------------------
 
@@ -45,6 +42,59 @@ function formatDate(iso) {
 
 // ---- scoreboard -------------------------------------------------------------
 
+// Tiny inline trend line, no chart library: the last 8 weekly composite
+// scores as an SVG polyline.
+function Sparkline({ scores, width = 64, height = 20 }) {
+  if (!scores || scores.length < 3) return <span style={styles.trendNone}>—</span>;
+  const pts = scores.slice(-8);
+  const min = Math.min(...pts);
+  const max = Math.max(...pts);
+  const span = max - min || 1;
+  const step = width / (pts.length - 1);
+  const points = pts
+    .map((v, i) => `${(i * step).toFixed(1)},${(height - 2 - ((v - min) / span) * (height - 4)).toFixed(1)}`)
+    .join(" ");
+  return (
+    <svg width={width} height={height} aria-hidden="true" style={{ display: "block" }}>
+      <polyline
+        points={points}
+        fill="none"
+        style={{ stroke: "var(--sage)", strokeWidth: 1.4 }}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// Trend cell: sparkline + week-over-week change in points, from /weekly.
+function TrendCell({ ticker }) {
+  const { data } = useWeeklyScores(ticker);
+  const scores = (data?.scores || [])
+    .filter((s) => s.composite_score != null)
+    .map((s) => Number(s.composite_score));
+
+  const delta =
+    scores.length >= 2 ? Math.round((scores[scores.length - 1] - scores[scores.length - 2]) * 100) : null;
+
+  return (
+    <div style={styles.trendCell}>
+      <Sparkline scores={scores} />
+      {delta != null && (
+        <span
+          style={{
+            ...styles.trendDelta,
+            color: delta > 0 ? "var(--up)" : delta < 0 ? "var(--down)" : "var(--faint)",
+          }}
+          title="Change vs the prior week, in points"
+        >
+          {delta > 0 ? `+${delta}` : delta === 0 ? "·" : delta}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function Scoreboard({ rows, source, earningsByTicker, onOpen }) {
   return (
     <section style={styles.block}>
@@ -68,11 +118,21 @@ function Scoreboard({ rows, source, earningsByTicker, onOpen }) {
           <thead>
             <tr>
               <th style={{ ...styles.th, textAlign: "left" }}>Company</th>
-              <th style={styles.th}>Signal read</th>
+              <th style={styles.th}>
+                <span style={styles.thTip}>
+                  Signal read <InfoTip label="signal read" text={gloss("signal-read")} />
+                </span>
+              </th>
+              <th style={styles.th}>
+                <span style={styles.thTip}>
+                  Trend <InfoTip label="trend" text={gloss("trend")} />
+                </span>
+              </th>
               <th style={styles.th}>Sentiment</th>
               <th style={styles.th}>Buzz</th>
               <th style={styles.th}>Hiring</th>
               <th style={styles.th}>Earnings</th>
+              <th style={styles.th} aria-hidden="true" />
             </tr>
           </thead>
           <tbody>
@@ -85,6 +145,7 @@ function Scoreboard({ rows, source, earningsByTicker, onOpen }) {
                   className="scoreboard-row"
                   tabIndex={0}
                   role="button"
+                  aria-label={`Open the ${r.name} dashboard`}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(r.ticker); }
                   }}
@@ -98,6 +159,9 @@ function Scoreboard({ rows, source, earningsByTicker, onOpen }) {
                       {r.score == null ? "—" : r.score}
                     </span>
                   </td>
+                  <td style={styles.td}>
+                    <TrendCell ticker={r.ticker} />
+                  </td>
                   <td style={styles.td}>{rankText(r.ranks.sentiment)}</td>
                   <td style={styles.td}>{rankText(r.ranks.mentions)}</td>
                   <td style={styles.td}>{rankText(r.ranks.hiring)}</td>
@@ -106,10 +170,11 @@ function Scoreboard({ rows, source, earningsByTicker, onOpen }) {
                       ? `in ${dayWord(earningsByTicker[r.ticker].days)}`
                       : "—"}
                   </td>
+                  <td style={{ ...styles.td, ...styles.chevronCell }} aria-hidden="true">→</td>
                 </tr>
               ) : (
                 <tr key={i} style={styles.row}>
-                  <td style={{ ...styles.td, textAlign: "left", color: "var(--faint)" }} colSpan={6}>
+                  <td style={{ ...styles.td, textAlign: "left", color: "var(--faint)" }} colSpan={8}>
                     Loading…
                   </td>
                 </tr>
@@ -128,38 +193,52 @@ function Scoreboard({ rows, source, earningsByTicker, onOpen }) {
 
 // ---- earnings calendar ------------------------------------------------------
 
-function EarningsCalendar({ rows }) {
+function EarningsCalendar({ rows, onOpen }) {
   return (
     <section style={styles.block}>
       <span className="eyebrow">Earnings calendar</span>
       <h2 style={styles.h2}>What's reporting next</h2>
       <p style={styles.lede}>
         Signals matter most in the run-up to a print. Companies closest to
-        earnings first.
+        earnings first; tap one to review its signals before the call.
       </p>
       <ul style={styles.calList}>
         {(rows || []).map((r) => {
           const urgent = r.days != null && r.days <= 14;
           const veryClose = r.days != null && r.days <= 3;
           return (
-            <li key={r.ticker} style={styles.calRow}>
+            <li
+              key={r.ticker}
+              style={styles.calRow}
+              className="scoreboard-row"
+              onClick={() => onOpen(r.ticker)}
+              tabIndex={0}
+              role="button"
+              aria-label={`Open the ${r.name} dashboard`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(r.ticker); }
+              }}
+            >
               <div>
                 <span style={styles.coName}>{r.name}</span>
                 <span style={styles.coTicker}>{r.ticker}</span>
               </div>
-              <div style={styles.calRight}>
-                <span style={{
-                  ...styles.calWhen,
-                  ...(urgent ? { color: "var(--clay)" } : {}),
-                  ...(veryClose ? { fontWeight: 600 } : {}),
-                }}>
-                  {r.days == null
-                    ? "Date unknown"
-                    : r.days <= 0
-                    ? "Reporting today"
-                    : `in ${dayWord(r.days)}`}
-                </span>
-                <span style={styles.calDate}>{formatDate(r.date)}</span>
+              <div style={styles.calAction}>
+                <div style={styles.calRight}>
+                  <span style={{
+                    ...styles.calWhen,
+                    ...(urgent ? { color: "var(--clay)" } : {}),
+                    ...(veryClose ? { fontWeight: 600 } : {}),
+                  }}>
+                    {r.days == null
+                      ? "Date unknown"
+                      : r.days <= 0
+                      ? "Reporting today"
+                      : `in ${dayWord(r.days)}`}
+                  </span>
+                  <span style={styles.calDate}>{formatDate(r.date)}</span>
+                </div>
+                <span style={styles.chevron} aria-hidden="true">→</span>
               </div>
             </li>
           );
@@ -171,32 +250,7 @@ function EarningsCalendar({ rows }) {
 
 // ---- track record (backtest) ------------------------------------------------
 
-function ScoreTrend({ ticker }) {
-  const { data } = useWeeklyScores(ticker);
-  const scores = (data?.scores || [])
-    .filter((s) => s.composite_score != null)
-    .map((s) => ({ week: s.week_start, score: Number(s.composite_score) }));
-  if (scores.length < 3) return null;
-  return (
-    <div style={styles.trendWrap}>
-      <div style={styles.trendLabel}>{ticker} composite score, recent weeks</div>
-      <div style={{ height: 90 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={scores} margin={{ top: 6, right: 6, bottom: 0, left: 6 }}>
-            <YAxis domain={[0, 1]} hide />
-            <Tooltip
-              formatter={(v) => [(v * 100).toFixed(0), "score"]}
-              contentStyle={{ fontSize: 11, border: `0.5px solid ${C.hairline}`, borderRadius: 6 }}
-            />
-            <Line type="monotone" dataKey="score" stroke={C.sage} strokeWidth={1.6} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
-function TrackRecord({ topTicker }) {
+function TrackRecord() {
   const { data } = useBacktest();
   const results = data?.results || null;
   const isMock = data?.source === "mock";
@@ -218,6 +272,11 @@ function TrackRecord({ topTicker }) {
         against the base rate (how often <em>any</em> week beat the market).
         Historical and preliminary: <strong>not predictive, not advice</strong>.
       </p>
+      <p style={styles.readingKey}>
+        How to read it: a 67% hit rate against a 53% base rate means flagged
+        weeks beat the market more often than a typical week did. The gap is
+        the edge; hover any label for its definition.
+      </p>
 
       {results == null ? (
         <p style={styles.empty}>Loading…</p>
@@ -231,6 +290,18 @@ function TrackRecord({ topTicker }) {
           {results.map((r) => {
             const edge =
               r.hit_rate != null && r.base_rate != null ? r.hit_rate - r.base_rate : null;
+            const noHistory = !r.total_weeks_tested && r.hit_rate == null;
+            if (noHistory) {
+              // A company with nothing computable yet gets one quiet line, not
+              // a full card of dashes.
+              return (
+                <div key={r.company} style={styles.cardEmpty}>
+                  <span style={styles.coName}>{r.company}</span>
+                  <span style={styles.coTicker}>{r.ticker || "—"}</span>
+                  <span style={styles.cardEmptyNote}>Not enough history to test yet.</span>
+                </div>
+              );
+            }
             return (
               <div key={r.company} style={styles.card}>
                 <div style={styles.cardHead}>
@@ -238,13 +309,13 @@ function TrackRecord({ topTicker }) {
                   <span style={styles.coTicker}>{r.ticker || "—"}</span>
                 </div>
                 <div style={styles.metricRow}>
-                  <Metric label="Hit rate" value={pct(r.hit_rate)} />
-                  <Metric label="Base rate" value={pct(r.base_rate)} />
+                  <Metric label="Hit rate" tip={gloss("hit-rate")} value={pct(r.hit_rate)} />
+                  <Metric label="Base rate" tip={gloss("base-rate")} value={pct(r.base_rate)} />
                 </div>
                 <div style={styles.metricRow}>
-                  <Metric label="Edge" value={signedPts(edge)}
+                  <Metric label="Edge" tip={gloss("edge")} value={signedPts(edge)}
                           color={edge == null ? undefined : edge > 0 ? "var(--up)" : edge < 0 ? "var(--down)" : undefined} />
-                  <Metric label="Avg 5d vs S&P" value={signedPct2(r.avg_relative_return)}
+                  <Metric label="Avg 5d vs S&P" tip={gloss("avg-5d")} value={signedPct2(r.avg_relative_return)}
                           color={r.avg_relative_return == null ? undefined
                             : r.avg_relative_return > 0 ? "var(--up)"
                             : r.avg_relative_return < 0 ? "var(--down)" : undefined} />
@@ -261,16 +332,17 @@ function TrackRecord({ topTicker }) {
           })}
         </div>
       )}
-
-      {results && results.length > 0 && topTicker && <ScoreTrend ticker={topTicker} />}
     </section>
   );
 }
 
-function Metric({ label, value, color }) {
+function Metric({ label, value, color, tip }) {
   return (
     <div style={styles.metric}>
-      <div style={styles.metricLabel}>{label}</div>
+      <div style={styles.metricLabel}>
+        {label}
+        {tip && <> <InfoTip label={label} text={tip} /></>}
+      </div>
       <div style={{ ...styles.metricValue, ...(color ? { color } : {}) }}>{value}</div>
     </div>
   );
@@ -285,7 +357,9 @@ export default function Investments({ ticker, onTickerChange }) {
 
   const earningsByTicker = {};
   for (const e of earningsRows || []) earningsByTicker[e.ticker] = e;
-  const topTicker = scoreRows?.[0]?.ticker || ticker || "HOOD";
+
+  // The company reporting soonest, for the alerts pitch below the calendar.
+  const next = (earningsRows || []).find((r) => r.days != null && r.days > 0);
 
   const openCompany = (t) => {
     if (onTickerChange) onTickerChange(t);
@@ -306,8 +380,26 @@ export default function Investments({ ticker, onTickerChange }) {
       </div>
 
       <Reveal><Scoreboard rows={scoreRows} source={scoreSource} earningsByTicker={earningsByTicker} onOpen={openCompany} /></Reveal>
-      <Reveal><EarningsCalendar rows={earningsRows} /></Reveal>
-      <Reveal><TrackRecord topTicker={topTicker} /></Reveal>
+      <Reveal><EarningsCalendar rows={earningsRows} onOpen={openCompany} /></Reveal>
+
+      <Reveal>
+        <section style={styles.block}>
+          <span className="eyebrow">Alerts</span>
+          <h2 style={styles.h2}>Get a heads-up before the print</h2>
+          <p style={styles.lede}>
+            {next
+              ? `${next.name} reports in ${dayWord(next.days)}. `
+              : ""}
+            Anomaly alerts email you when a signal breaks from its pattern, so
+            you can look before the quarter is public.
+          </p>
+          <div style={styles.subscribeWrap}>
+            <SubscribeForm />
+          </div>
+        </section>
+      </Reveal>
+
+      <Reveal><TrackRecord /></Reveal>
 
       <Reveal>
         <section style={styles.block}>
@@ -371,10 +463,28 @@ const styles = {
     color: "var(--faint)",
     marginTop: "14px",
   },
+  readingKey: {
+    fontSize: "13.5px",
+    lineHeight: 1.6,
+    color: "var(--faint)",
+    marginTop: "10px",
+    maxWidth: "640px",
+    fontStyle: "italic",
+  },
 
   // scoreboard table
   tableWrap: { marginTop: "24px", overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "collapse", minWidth: "560px", fontSize: "14px" },
+  table: { width: "100%", borderCollapse: "collapse", minWidth: "700px", fontSize: "14px" },
+  thTip: { display: "inline-flex", alignItems: "center", gap: "5px" },
+  trendCell: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: "8px",
+  },
+  trendDelta: { fontSize: "12px", fontWeight: 600, minWidth: "22px", textAlign: "left" },
+  trendNone: { color: "var(--faint)" },
+  chevronCell: { color: "var(--faint)", fontSize: "15px", width: "34px", paddingLeft: 0 },
   th: {
     fontSize: "10px",
     fontWeight: 600,
@@ -412,6 +522,11 @@ const styles = {
   calRight: { textAlign: "right", display: "flex", flexDirection: "column", gap: "3px" },
   calWhen: { fontSize: "14px", color: "var(--ink)" },
   calDate: { fontSize: "12px", color: "var(--faint)" },
+  calAction: { display: "flex", alignItems: "center", gap: "14px" },
+  chevron: { color: "var(--faint)", fontSize: "15px" },
+
+  // alerts CTA
+  subscribeWrap: { marginTop: "24px", maxWidth: "560px" },
 
   // track record cards
   empty: {
@@ -463,15 +578,17 @@ const styles = {
   },
   warn: { color: "var(--clay)", fontWeight: 600 },
 
-  trendWrap: { marginTop: "28px", maxWidth: "520px" },
-  trendLabel: {
-    fontSize: "10px",
-    fontWeight: 600,
-    letterSpacing: "0.1em",
-    textTransform: "uppercase",
-    color: "var(--faint)",
-    marginBottom: "6px",
+  cardEmpty: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: "4px",
+    background: "var(--surface)",
+    border: "0.5px solid var(--hairline)",
+    borderRadius: "12px",
+    padding: "18px 24px",
+    alignSelf: "start",
   },
+  cardEmptyNote: { fontSize: "13px", color: "var(--faint)", marginLeft: "10px" },
 
   link: { color: "var(--sage)", textDecoration: "none", fontWeight: 500, whiteSpace: "nowrap" },
 };
