@@ -1,9 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { motion, useReducedMotion } from "framer-motion";
 import Footer from "../components/Footer";
 import SubscribeForm from "../components/SubscribeForm";
-import { Reveal, RevealGroup, RevealChild, CountUp, EASE } from "../anim";
+import { Reveal, RevealGroup, RevealChild, CountUp, FadeUp } from "../anim";
 
 const MOCK_CHIPS = [
   ["Sentiment", "87"],
@@ -70,40 +69,30 @@ function Label({ children, dark }) {
 }
 
 export default function Home() {
-  const reduce = useReducedMotion();
-  const seq = (delay, x = 0) =>
-    reduce
-      ? {}
-      : {
-          initial: { opacity: 0, y: x ? 0 : 18, x },
-          animate: { opacity: 1, y: 0, x: 0 },
-          transition: { duration: 0.7, ease: EASE, delay },
-        };
-
   return (
     <div>
       {/* SECTION 1, Hero (sand) */}
       <section className="home-hero" style={s.hero}>
         <div className="home-hero-grid" style={s.heroGrid}>
           <div style={s.heroLeft}>
-            <motion.h1 className="home-headline" style={s.headline} {...seq(0.05)}>
+            <FadeUp as="h1" className="home-headline" style={s.headline} delay={0.05}>
               Fintech intelligence
               <br />
               before the earnings call.
-            </motion.h1>
-            <motion.p style={s.heroSub} {...seq(0.22)}>
+            </FadeUp>
+            <FadeUp as="p" style={s.heroSub} delay={0.22}>
               Prism monitors five alternative-data signals across leading fintech
               companies and uses AI to turn them into readable research.
-            </motion.p>
-            <motion.div {...seq(0.4)}>
+            </FadeUp>
+            <FadeUp delay={0.4}>
               <Link to="/dashboard" className="home-launch" style={s.cta}>
                 Launch dashboard
               </Link>
-            </motion.div>
+            </FadeUp>
           </div>
-          <motion.div style={s.heroRight} {...seq(0.28, 48)}>
+          <FadeUp style={s.heroRight} delay={0.28} x={48}>
             <MockCard />
-          </motion.div>
+          </FadeUp>
         </div>
       </section>
 
@@ -164,8 +153,8 @@ export default function Home() {
           <Reveal delay={0.2}>
             <p style={{ ...s.body, color: "rgba(231,220,203,0.72)", maxWidth: "560px" }}>
               Every signal is measured against its own recent history. When
-              something breaks from the pattern, Prism flags it automatically -
-              no waiting for the quarterly report.
+              something breaks from the pattern, Prism flags it automatically.
+              No waiting for the quarterly report.
             </p>
           </Reveal>
           <Reveal delay={0.32} style={s.statBlock}>
@@ -209,7 +198,7 @@ export default function Home() {
               for a view of your own. Here's where analysts begin.
             </p>
           </Reveal>
-          <RevealGroup className="company-grid" style={s.useCaseGrid} amount={0.2}>
+          <RevealGroup className="track-grid" style={s.useCaseGrid} amount={0.2}>
             {USE_CASES.map(([title, body], i) => (
               <RevealChild className="track-card" key={title} style={s.useCaseCard}>
                 <span style={s.useCaseNum}>{String(i + 1).padStart(2, "0")}</span>
@@ -235,7 +224,7 @@ export default function Home() {
               Five fintechs, watched daily.
             </h2>
           </Reveal>
-          <RevealGroup className="company-grid" style={s.companyGrid} amount={0.2}>
+          <RevealGroup className="company-grid company-grid--five" style={s.companyGrid} amount={0.2}>
             {COMPANIES.map(([name, ticker]) => (
               <RevealChild key={ticker} className="track-card" style={s.companyCard}>
                 <span style={s.companyDot} />

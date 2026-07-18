@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import NavBar from "./components/NavBar";
 // TEMPORARILY DISABLED - re-enable once AI backend is stable.
 // The floating "Ask about [COMPANY]" chat widget is turned off site-wide.
@@ -21,7 +20,6 @@ export default function App() {
   // company selection.
   const [ticker, setTicker] = useState("HOOD");
   const location = useLocation();
-  const reduce = useReducedMotion();
 
   // Opt out of the browser's automatic scroll restoration so navigations don't
   // land mid-page.
@@ -61,23 +59,9 @@ export default function App() {
     <div style={{ minHeight: "100vh" }}>
       <a href="#main" className="skip-link">Skip to content</a>
       <NavBar />
-      <main id="main">
-        {reduce ? (
-          routes
-        ) : (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-            >
-              {routes}
-            </motion.div>
-          </AnimatePresence>
-        )}
-      </main>
+      {/* Routes swap instantly: product surfaces load into a task, and page
+          content is never gated on an animation finishing. */}
+      <main id="main">{routes}</main>
       {/* TEMPORARILY DISABLED - re-enable once AI backend is stable.
           The "Ask about [COMPANY]" chat widget is off site-wide. Restore the
           line below (and its import above) to bring it back:

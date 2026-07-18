@@ -213,7 +213,7 @@ def summarize(
     )
     if n_np == 0:
         quality += (
-            " No net-positive weeks with price data — nothing to conclude."
+            " No net-positive weeks with price data, so nothing to conclude."
         )
     elif small:
         quality += (

@@ -8,15 +8,15 @@ import { RevealGroup, RevealChild } from "../anim";
 const STEPS = [
   [
     "Pick a company",
-    "Use the switcher to move between the five fintechs we track — Robinhood, Affirm, Block, Klarna, and Chime. Everything below reloads for that company.",
+    "Use the switcher to move between the five fintechs we track: Robinhood, Affirm, Block, Klarna, and Chime. Everything below reloads for that company.",
   ],
   [
     "Read the bottom line",
-    "Start with “The read.” It opens with a one-line verdict on the week, drawn from where the signals agree — the fastest way to see if the story is turning positive or negative.",
+    "Start with “The read.” It opens with a one-line verdict on the week, drawn from where the signals agree. It's the fastest way to see if the story is turning positive or negative.",
   ],
   [
     "See which signals moved",
-    "The five stat cards show social mentions, hiring postings, search interest, app reviews, and SEC filings — each with its week-over-week change, so you can tell what actually shifted, not just the level.",
+    "The five stat cards show social mentions, hiring postings, search interest, app reviews, and SEC filings, each with its week-over-week change, so you can tell what actually shifted, not just the level.",
   ],
   [
     "Open the analyst notes",
@@ -28,7 +28,7 @@ const STEPS = [
   ],
   [
     "Draw your own conclusion",
-    "Check the company against its peers and the days-to-earnings countdown, then decide what you think. Prism surfaces what's moving and why — the call is yours.",
+    "Check the company against its peers and the days-to-earnings countdown, then decide what you think. Prism surfaces what's moving and why; the call is yours.",
   ],
 ];
 
@@ -36,7 +36,7 @@ const STEPS = [
 const USE_CASES = [
   [
     "Prep for the earnings call",
-    "Before a company reports, scan its five signals for where they diverge from the consensus story. If hiring is accelerating while sentiment cools, that tension is worth a closer look — and it's visible weeks before the print.",
+    "Before a company reports, scan its five signals for where they diverge from the consensus story. If hiring is accelerating while sentiment cools, that tension is worth a closer look, and it's visible weeks before the print.",
   ],
   [
     "Catch an inflection early",

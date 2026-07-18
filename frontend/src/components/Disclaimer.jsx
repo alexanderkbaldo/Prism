@@ -11,7 +11,7 @@ export default function Disclaimer({ children, style }) {
         {children || (
           <>
             Prism is a student research project. The scores and backtests here
-            describe alternative-data <em>signals</em> — they are not prices,
+            describe alternative-data <em>signals</em>: they are not prices,
             forecasts, or recommendations, and this is <strong>not investment
             advice</strong>. Do your own research.
           </>
@@ -28,7 +28,6 @@ const styles = {
     alignItems: "baseline",
     background: "var(--surface)",
     border: "0.5px solid var(--hairline)",
-    borderLeft: "3px solid var(--clay)",
     borderRadius: "10px",
     padding: "16px 20px",
   },

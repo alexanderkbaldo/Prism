@@ -51,7 +51,7 @@ function Scoreboard({ rows, source, earningsByTicker, onOpen }) {
       <div style={styles.blockHead}>
         <span className="eyebrow">This week's signal read</span>
         {source === "mock" && (
-          <span style={styles.mockTag} title="Backend unreachable — sample data.">
+          <span style={styles.mockTag} title="Backend unreachable, showing sample data.">
             Sample data
           </span>
         )}
@@ -59,7 +59,7 @@ function Scoreboard({ rows, source, earningsByTicker, onOpen }) {
       <h2 style={styles.h2}>Where the five stand today</h2>
       <p style={styles.lede}>
         A 0–100 read of each company's week across social mood and hiring (50 is
-        neutral). A starting point for research — tap a company to open its full
+        neutral). A starting point for research: tap a company to open its full
         dashboard.
       </p>
 
@@ -206,7 +206,7 @@ function TrackRecord({ topTicker }) {
       <div style={styles.blockHead}>
         <span className="eyebrow">Track record</span>
         {isMock && (
-          <span style={styles.mockTag} title="Backend unreachable — sample data.">
+          <span style={styles.mockTag} title="Backend unreachable, showing sample data.">
             Sample data
           </span>
         )}
@@ -216,7 +216,7 @@ function TrackRecord({ topTicker }) {
         On the weeks the signals flagged a company as net-positive, did the stock
         beat the S&amp;P 500 over the next five trading days? We show the hit rate
         against the base rate (how often <em>any</em> week beat the market).
-        Historical and preliminary — <strong>not predictive, not advice</strong>.
+        Historical and preliminary: <strong>not predictive, not advice</strong>.
       </p>
 
       {results == null ? (
@@ -298,7 +298,7 @@ export default function Investments({ ticker, onTickerChange }) {
         <span className="eyebrow" style={{ color: "var(--sage)" }}>Investments</span>
         <h1 style={styles.title}>The five fintechs, at a glance.</h1>
         <p style={styles.sub}>
-          A cross-company read for anyone researching these names — the week's
+          A cross-company read for anyone researching these names: the week's
           signals, what's reporting next, and how the signals have held up
           historically.
         </p>
@@ -314,7 +314,7 @@ export default function Investments({ ticker, onTickerChange }) {
           <span className="eyebrow">Use it responsibly</span>
           <h2 style={styles.h2}>A research tool, not a tip sheet</h2>
           <p style={styles.lede}>
-            Prism surfaces alternative-data signals and explains them — it doesn't
+            Prism surfaces alternative-data signals and explains them; it doesn't
             tell you what to buy or sell. Treat every score here as one input into
             your own research, alongside fundamentals, filings, and your own view
             of risk. New to reading the signals?{" "}

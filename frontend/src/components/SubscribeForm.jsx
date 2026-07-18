@@ -96,7 +96,7 @@ export default function SubscribeForm({ dark = false }) {
         </p>
       )}
       <p style={{ ...s.fine, color: faint }}>
-        Double opt-in — we'll email a confirmation link. Unsubscribe anytime.
+        Double opt-in: we'll email a confirmation link. Unsubscribe anytime.
       </p>
     </form>
   );

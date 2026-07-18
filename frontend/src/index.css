@@ -200,6 +200,17 @@ textarea:focus-visible,
 .cmp-select:hover { border-color: var(--sage); }
 .cmp-select:focus { outline: none; border-color: var(--sage); box-shadow: 0 0 0 3px var(--sage-soft); }
 
+/* Hero mount entrance, driven by <FadeUp> in anim.jsx. */
+@keyframes prism-enter {
+  from { opacity: 0; transform: translate(var(--enter-x, 0px), var(--enter-y, 0px)); }
+  to   { opacity: 1; transform: translate(0, 0); }
+}
+
+/* Companies grid: all five in one row once there's room, so no orphan card. */
+@media (min-width: 1100px) {
+  .company-grid--five { grid-template-columns: repeat(5, 1fr) !important; }
+}
+
 /* Respect reduced-motion: neutralize transform/animation-based motion. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -213,7 +224,13 @@ textarea:focus-visible,
    use !important to take over on small screens. */
 @media (max-width: 720px) {
   .page { padding-left: 20px !important; padding-right: 20px !important; }
-  .nav-inner { padding: 14px 20px !important; }
+  .nav-inner {
+    padding: 12px 16px !important;
+    flex-wrap: wrap !important;
+    row-gap: 2px !important;
+  }
+  .nav-links { flex-wrap: wrap !important; }
+  .nav-links a { padding: 6px 10px !important; }
 
   /* Stat row: 5 columns → 2; dividers only between the two columns. */
   .stat-grid { grid-template-columns: 1fr 1fr !important; row-gap: 6px !important; }
