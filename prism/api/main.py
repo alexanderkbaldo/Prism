@@ -247,6 +247,65 @@ def get_backtest_weeks(
         return {"source": "mock", "count": len(rows), "weeks": rows}
 
 
+@app.get("/paper/portfolio", dependencies=PROTECTED)
+def get_paper_portfolio() -> dict[str, Any]:
+    """The paper-trading agent's full record: every simulated trade (one per
+    net-positive flagged week, fixed notional, 5-day hold), the cumulative
+    P&L curve vs an identical-dates S&P 500 leg, and headline totals.
+    Simulated money for research and education — NOT advice."""
+    try:
+        from prism.analysis.backtest import _records_for_company
+        from prism.analysis.paper import build_portfolio
+
+        records_by_company: dict[str, list] = {}
+        tickers: dict[str, str | None] = {}
+        for c in COMPANIES:
+            matched, _weeks, records = _records_for_company(c.name)
+            records_by_company[matched.name] = records
+            tickers[matched.name] = matched.ticker
+        payload = build_portfolio(records_by_company, tickers)
+        payload["trades"] = [_serialise(t) for t in payload["trades"]]
+        payload["curve"] = [_serialise(p) for p in payload["curve"]]
+        return {"source": "db", **payload}
+    except Exception:  # noqa: BLE001 - DB down; serve clearly-labelled mock
+        log.exception("paper portfolio failed; returning mock data")
+        return {"source": "mock", **_mock_paper()}
+
+
+@app.get("/paper/memo", dependencies=PROTECTED)
+def get_paper_memo(
+    company: str = Query(..., description="Ticker or name"),
+    week: str = Query(..., description="Trade week start, YYYY-MM-DD"),
+) -> dict[str, Any]:
+    """The agent's memo for one closed paper trade: a short retrospective
+    Claude write-up of what the signals showed and how the simulated trade
+    worked out. Written once and cached; explanatory, never a recommendation."""
+    try:
+        week_start = datetime.strptime(week, "%Y-%m-%d").date()
+    except ValueError:
+        return {"source": "db", "available": False,
+                "reason": "week must be YYYY-MM-DD"}
+    try:
+        from prism.ai.memos import write_trade_memo
+
+        payload = write_trade_memo(_canonical_name(company), week_start)
+        return {"source": "db", **_serialise(payload)}
+    except Exception:  # noqa: BLE001 - DB down; serve clearly-labelled sample
+        log.exception("paper memo failed; returning mock data")
+        return {
+            "source": "mock", "available": True, "model": "mock",
+            "memo_text": (
+                "Sample memo (backend unreachable). That week, search interest "
+                "ran above its trailing pattern while a routine filing landed, "
+                "so the composite flagged the week and the agent opened its "
+                "usual simulated position. Over the next five sessions the "
+                "stock edged past the S&P 500, and the position closed with a "
+                "small relative gain. One good week is weather, not climate: "
+                "a single flagged signal says little on its own."
+            ),
+        }
+
+
 @app.get("/weekly", dependencies=PROTECTED)
 def get_weekly(
     company: str = Query(..., description="Ticker (HOOD) or name (Robinhood)"),
@@ -489,6 +548,20 @@ def _mock_backtest_weeks(company: str | None, limit: int = 12) -> list[dict]:
         rows = [r for r in rows
                 if company.upper() in (r["ticker"], r["company"].upper())]
     return rows[:limit]
+
+
+def _mock_paper() -> dict:
+    """Sample paper portfolio built by running the REAL paper engine over the
+    mock flagged weeks, so the offline page shows the true payload shape."""
+    from prism.analysis.paper import build_portfolio
+
+    rows = _mock_backtest_weeks(None, 12)
+    by_company: dict[str, list] = {}
+    tickers: dict[str, str | None] = {}
+    for r in rows:
+        by_company.setdefault(r["company"], []).append({**r, "net_positive": True})
+        tickers[r["company"]] = r["ticker"]
+    return build_portfolio(by_company, tickers)
 
 
 def _mock_weekly(company: str) -> list[dict]:

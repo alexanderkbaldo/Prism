@@ -6,6 +6,7 @@ const LINKS = [
   { to: "/", label: "Home", end: true },
   { to: "/dashboard", label: "Dashboard", end: false },
   { to: "/investments", label: "Investments", end: false },
+  { to: "/agent", label: "Agent", end: false },
   { to: "/guide", label: "Guide", end: false },
   // TEMPORARILY DISABLED - re-enable once AI backend is stable.
   // The Compare page is hidden from the nav; the /compare route redirects to

@@ -22,6 +22,8 @@ Prism continuously monitors five leading fintech companies — **Robinhood (HOOD
 - **Email alerts** — digests of newly detected anomalies.
 - **Earnings calendar** — the next scheduled earnings date per company, found via web search and cached.
 - **Real-time AI chat** — ask questions about any company and get answers grounded strictly in Prism's underlying data.
+- **Paper-trading agent** — a rule-driven simulated portfolio (one fixed-notional trade per flagged week, 5-day hold) with a public P&L curve vs the S&P 500 and a Claude-written memo on every closed trade. Simulated money only.
+- **MCP server** — plug Prism into Claude or any MCP-capable agent and query the signals, backtest, and paper portfolio as tools (see below).
 
 ---
 
@@ -71,6 +73,34 @@ Prism is a two-tier system: a Python data-and-AI backend and a React frontend.
 
 ---
 
+## Connect an AI agent (MCP)
+
+Prism ships an MCP server ([prism/mcp_server.py](prism/mcp_server.py)) that wraps the deployed API, so any MCP-capable LLM can use Prism's data as tools — and combine it with other connectors (a brokerage's read-only market data, a calendar, anything).
+
+```bash
+# Claude Code
+claude mcp add prism -- python -m prism.mcp_server
+```
+
+```json
+// Claude Desktop — claude_desktop_config.json
+{
+  "mcpServers": {
+    "prism": {
+      "command": "python",
+      "args": ["-m", "prism.mcp_server"],
+      "env": { "PRISM_API_URL": "https://prism-production-8655.up.railway.app" }
+    }
+  }
+}
+```
+
+Tools: `get_scoreboard`, `get_signals`, `get_company_brief`, `get_anomalies`, `get_flagged_weeks`, `get_backtest`, `get_earnings_calendar`, `get_paper_portfolio`. All read-only research data; none place, prepare, or recommend real trades.
+
+A demo prompt to try: *"Pull Prism's scoreboard, flagged weeks, and earnings calendar. If a brokerage connector is available, pull live quotes for the five tickers (read-only). Write a one-page pre-earnings watchlist covering where the signals and the market disagree. Do not place or recommend any real trades."*
+
+---
+
 ## Disclaimer
 
-Prism is a University of Michigan student project. For research and educational purposes only; not investment advice.
+Prism is a University of Michigan student project. For research and educational purposes only; not investment advice. The paper-trading agent uses simulated money exclusively.

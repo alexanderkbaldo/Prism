@@ -205,6 +205,18 @@ CREATE TABLE IF NOT EXISTS scraper_runs (
 CREATE INDEX IF NOT EXISTS idx_scraper_runs_scraper
     ON scraper_runs (scraper, created_at DESC);
 
+-- The paper-trading agent's trade memos (see prism/ai/memos.py). One memo per
+-- (company, flagged week), written once by Claude after the trade closed and
+-- cached here so the published record never rewrites itself.
+CREATE TABLE IF NOT EXISTS agent_memos (
+    company    TEXT        NOT NULL,
+    week_start DATE        NOT NULL,
+    memo_text  TEXT        NOT NULL,
+    model      TEXT        NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (company, week_start)
+);
+
 -- Convenience view: daily per-company sentiment + volume rollup.
 CREATE OR REPLACE VIEW daily_company_signals AS
 SELECT

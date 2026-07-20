@@ -308,6 +308,33 @@ def insert_brief(
         return cur.fetchone()["id"]
 
 
+def get_agent_memo(company: str, week_start) -> dict | None:
+    """The stored paper-trade memo for one (company, week), or None."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT company, week_start, memo_text, model, created_at
+            FROM agent_memos
+            WHERE lower(company) = lower(%s) AND week_start = %s
+            """,
+            (company, week_start),
+        )
+        return cur.fetchone()
+
+
+def upsert_agent_memo(company: str, week_start, memo_text: str, model: str) -> None:
+    """Store a trade memo; first write wins (memos are written once)."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO agent_memos (company, week_start, memo_text, model)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (company, week_start) DO NOTHING
+            """,
+            (company, week_start, memo_text, model),
+        )
+
+
 def get_latest_brief(company: str) -> dict | None:
     """Most recent brief for a company (ticker or name match)."""
     with get_cursor() as cur:

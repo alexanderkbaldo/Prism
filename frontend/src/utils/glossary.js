@@ -48,6 +48,13 @@ export const GLOSSARY = [
       "pattern.",
   },
   {
+    id: "paper-trade",
+    term: "Paper trade",
+    def:
+      "A simulated position with imaginary money, recorded at real market " +
+      "prices. It tracks what a rule would have done without risking a cent.",
+  },
+  {
     id: "hit-rate",
     term: "Hit rate",
     def:

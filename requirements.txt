@@ -15,6 +15,9 @@ uvicorn[standard]>=0.29,<1
 anthropic>=0.40,<1
 openai>=1.40,<2
 
+# MCP server (prism/mcp_server.py) — lets LLM agents connect to Prism's data.
+mcp>=1.2,<2
+
 # Source-specific clients (optional at runtime; imported lazily).
 praw>=7.7,<8            # Reddit
 pytrends>=4.9,<5        # Google Trends

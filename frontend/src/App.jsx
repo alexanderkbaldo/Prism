@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
 import Guide from "./pages/Guide";
 import Investments from "./pages/Investments";
+import Agent from "./pages/Agent";
 
 export default function App() {
   // Lifted so the chat launcher (global) stays in sync with the dashboard's
@@ -50,6 +51,7 @@ export default function App() {
         path="/investments"
         element={<Investments ticker={ticker} onTickerChange={setTicker} />}
       />
+      <Route path="/agent" element={<Agent />} />
       <Route path="/guide" element={<Guide />} />
       <Route path="/about" element={<About />} />
     </Routes>

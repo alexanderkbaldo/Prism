@@ -429,6 +429,12 @@ function TrackRecord({ onOpen }) {
       )}
 
       <FlaggedWeeks onOpen={onOpen} />
+
+      <p style={{ ...styles.lede, marginTop: "28px" }}>
+        These flagged weeks also drive a paper-trading agent that publishes its
+        simulated P&L and a memo on every trade.{" "}
+        <Link to="/agent" style={styles.link}>See the agent's record →</Link>
+      </p>
     </section>
   );
 }

@@ -158,6 +158,30 @@ export function useBacktestWeeks(limit = 12) {
   return { data, loading, error };
 }
 
+// The paper-trading agent's full record: summary, equity curve, trade log.
+export function usePaperPortfolio() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    apiFetch("/paper/portfolio")
+      .then(setData)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { data, loading, error };
+}
+
+// One trade's memo, fetched lazily when a trade row is expanded.
+export function fetchTradeMemo(company, week) {
+  return apiFetch(
+    `/paper/memo?company=${encodeURIComponent(company)}&week=${encodeURIComponent(week)}`
+  );
+}
+
 // Composite weekly signal scores for one company (oldest week first).
 export function useWeeklyScores(ticker) {
   const [data, setData] = useState(null);
