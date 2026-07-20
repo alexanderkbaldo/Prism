@@ -40,6 +40,14 @@ export const GLOSSARY = [
       "pattern: a statistically unusual move worth a closer look.",
   },
   {
+    id: "flagged-week",
+    term: "Flagged week",
+    def:
+      "A week the two signals with real historical depth (search interest " +
+      "and SEC filings) scored net-positive relative to their trailing " +
+      "pattern.",
+  },
+  {
     id: "hit-rate",
     term: "Hit rate",
     def:

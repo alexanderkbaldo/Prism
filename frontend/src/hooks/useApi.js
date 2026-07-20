@@ -140,6 +140,24 @@ export function useBacktest(ticker = null) {
   return { data, loading, error };
 }
 
+// The most recent weeks the backtest composite flagged as net-positive across
+// all companies, each with its 5-day outcome vs the S&P (newest first).
+export function useBacktestWeeks(limit = 12) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    apiFetch(`/backtest/weeks?limit=${limit}`)
+      .then(setData)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [limit]);
+
+  return { data, loading, error };
+}
+
 // Composite weekly signal scores for one company (oldest week first).
 export function useWeeklyScores(ticker) {
   const [data, setData] = useState(null);

@@ -220,6 +220,33 @@ def get_backtest(
         return {"source": "mock", "count": len(rows), "results": rows}
 
 
+@app.get("/backtest/weeks", dependencies=PROTECTED)
+def get_backtest_weeks(
+    company: str | None = Query(None, description="Ticker or name; omit for all"),
+    limit: int = Query(12, ge=1, le=52),
+) -> dict[str, Any]:
+    """The most recent weeks the 2-signal backtest composite (Trends + Filings)
+    flagged as net-positive, each with the stock's 5-day outcome vs the S&P 500.
+    These are the evidence rows behind /backtest's aggregates. Analysis
+    infrastructure, NOT a prediction or recommendation."""
+    try:
+        from prism.analysis.backtest import flagged_weeks_for_company
+
+        targets = ([_canonical_name(company)] if company
+                   else [c.name for c in COMPANIES])
+        rows: list[dict] = []
+        for name in targets:
+            rows.extend(flagged_weeks_for_company(name, limit))
+        rows.sort(key=lambda r: r["week_start"], reverse=True)
+        rows = rows[:limit]
+        return {"source": "db", "count": len(rows),
+                "weeks": [_serialise(r) for r in rows]}
+    except Exception:  # noqa: BLE001 - DB down; serve clearly-labelled mock
+        log.exception("backtest weeks query failed; returning mock data")
+        rows = _mock_backtest_weeks(company, limit)
+        return {"source": "mock", "count": len(rows), "weeks": rows}
+
+
 @app.get("/weekly", dependencies=PROTECTED)
 def get_weekly(
     company: str = Query(..., description="Ticker (HOOD) or name (Robinhood)"),
@@ -434,6 +461,34 @@ def _mock_backtest(company: str | None) -> list[dict]:
         samples = [s for s in samples
                    if company.upper() in (s["ticker"], (s["company"] or "").upper())]
     return samples
+
+
+def _mock_backtest_weeks(company: str | None, limit: int = 12) -> list[dict]:
+    """Clearly-labelled sample flagged weeks so the table renders without
+    Postgres. Newest first, mixed beats and misses; illustrative only."""
+    today = datetime.now(timezone.utc).date()
+    monday = today - timedelta(days=today.weekday())
+    samples = [
+        ("Robinhood", "HOOD", 2, 0.031, 0.008, True),
+        ("Affirm", "AFRM", 3, 0.018, 0.011, True),
+        ("Robinhood", "HOOD", 5, -0.004, 0.006, False),
+        ("Chime", "CHYM", 6, 0.012, 0.005, True),
+        ("Affirm", "AFRM", 9, -0.013, 0.002, False),
+        ("Block", "XYZ", 11, 0.024, 0.009, True),
+    ]
+    rows = []
+    for name, ticker, weeks_ago, stock_r, sp_r, beat in samples:
+        rows.append({
+            "company": name, "ticker": ticker,
+            "week_start": (monday - timedelta(weeks=weeks_ago)).isoformat(),
+            "stock_return": stock_r, "sp_return": sp_r,
+            "relative_return": round(stock_r - sp_r, 4),
+            "outperformed": beat,
+        })
+    if company:
+        rows = [r for r in rows
+                if company.upper() in (r["ticker"], r["company"].upper())]
+    return rows[:limit]
 
 
 def _mock_weekly(company: str) -> list[dict]:

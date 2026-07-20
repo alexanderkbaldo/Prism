@@ -154,3 +154,36 @@ def test_summarize_handles_no_net_positive_weeks():
     assert s["avg_relative_return"] is None
     assert s["base_rate"] == pytest.approx(1.0)
     assert "nothing to conclude" in s["data_quality"]
+
+
+# --- select_flagged: the evidence rows behind the summary ---------------------
+
+def _rec_on(week_start: date, net_positive: bool, rel: float = 0.01):
+    return {**_rec(net_positive, rel), "week_start": week_start}
+
+
+def test_select_flagged_keeps_only_net_positive_newest_first():
+    records = [
+        _rec_on(date(2026, 1, 5), True, 0.02),
+        _rec_on(date(2026, 1, 12), False, 0.03),   # not flagged: dropped
+        _rec_on(date(2026, 1, 19), True, -0.01),
+        _rec_on(date(2026, 1, 26), True, 0.04),
+    ]
+    out = B.select_flagged(records)
+
+    assert [r["week_start"] for r in out] == [
+        date(2026, 1, 26), date(2026, 1, 19), date(2026, 1, 5),
+    ]
+    assert all(r["net_positive"] for r in out)
+
+
+def test_select_flagged_caps_at_limit():
+    records = [
+        _rec_on(date(2026, 1, 5) + timedelta(weeks=i), True) for i in range(10)
+    ]
+    out = B.select_flagged(records, limit=4)
+
+    assert len(out) == 4
+    # The cap keeps the newest weeks, not the oldest.
+    assert out[0]["week_start"] == date(2026, 1, 5) + timedelta(weeks=9)
+    assert out[-1]["week_start"] == date(2026, 1, 5) + timedelta(weeks=6)

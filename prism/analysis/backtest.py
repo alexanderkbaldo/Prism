@@ -286,8 +286,12 @@ def _resolve_company(ticker_or_name: str):
     )
 
 
-def run_backtest_for_company(company: str) -> dict[str, Any]:
-    """Compute (without storing) the backtest summary for one company."""
+def _records_for_company(company: str):
+    """Resolve a company and compute its per-week backtest records from the DB.
+
+    Returns (matched_company, weeks, records) where `records` is the output of
+    `evaluate_weeks`. Shared by the summary and the flagged-weeks detail.
+    """
     from prism.common.db import get_prices
 
     matched = _resolve_company(company)
@@ -301,7 +305,42 @@ def run_backtest_for_company(company: str) -> dict[str, Any]:
     sp_prices = [(r["date"], float(r["close_price"])) for r in sp_rows]
 
     records = evaluate_weeks(weeks, stock_prices, sp_prices)
+    return matched, weeks, records
+
+
+def run_backtest_for_company(company: str) -> dict[str, Any]:
+    """Compute (without storing) the backtest summary for one company."""
+    matched, weeks, records = _records_for_company(company)
     return summarize(matched.name, matched.ticker, records, weeks_available=len(weeks))
+
+
+def select_flagged(records: list[dict[str, Any]], limit: int = 12) -> list[dict[str, Any]]:
+    """Net-positive records only, newest first, capped at `limit`. Pure."""
+    flagged = [r for r in records if r["net_positive"]]
+    flagged.sort(key=lambda r: r["week_start"], reverse=True)
+    return flagged[:limit]
+
+
+def flagged_weeks_for_company(company: str, limit: int = 12) -> list[dict[str, Any]]:
+    """Newest-first net-positive weeks with their 5-day outcomes.
+
+    The evidence rows behind the stored summary: each is one week the 2-signal
+    composite flagged, with the stock's return vs the S&P over the following
+    five trading days.
+    """
+    matched, _weeks, records = _records_for_company(company)
+    return [
+        {
+            "company": matched.name,
+            "ticker": matched.ticker,
+            "week_start": r["week_start"],
+            "stock_return": r["stock_return"],
+            "sp_return": r["sp_return"],
+            "relative_return": r["relative_return"],
+            "outperformed": r["outperformed"],
+        }
+        for r in select_flagged(records, limit)
+    ]
 
 
 def run_and_store_for_company(company: str) -> dict[str, Any]:

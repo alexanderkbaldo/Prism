@@ -7,7 +7,7 @@ import SubscribeForm from "../components/SubscribeForm";
 import { Reveal } from "../anim";
 import { useScoreboard } from "../hooks/useScoreboard";
 import { useEarningsCalendar } from "../hooks/useEarningsCalendar";
-import { useBacktest, useWeeklyScores } from "../hooks/useApi";
+import { useBacktest, useBacktestWeeks, useWeeklyScores } from "../hooks/useApi";
 import { gloss } from "../utils/glossary";
 
 // ---- formatting helpers -----------------------------------------------------
@@ -250,7 +250,102 @@ function EarningsCalendar({ rows, onOpen }) {
 
 // ---- track record (backtest) ------------------------------------------------
 
-function TrackRecord() {
+// The evidence rows behind the aggregate cards: the most recent weeks the
+// backtest composite flagged, and what the stock did over the next 5 days.
+function FlaggedWeeks({ onOpen }) {
+  const { data, error } = useBacktestWeeks(12);
+  // On error (e.g. an API that predates this endpoint), fall through to the
+  // empty state rather than loading forever.
+  const weeks = data?.weeks || (error ? [] : null);
+  const isMock = data?.source === "mock";
+
+  return (
+    <div style={styles.flaggedWrap}>
+      <div style={styles.blockHead}>
+        <h3 style={styles.h3}>
+          The weeks behind the numbers{" "}
+          <InfoTip label="flagged weeks" text={gloss("flagged-week")} />
+        </h3>
+        {isMock && (
+          <span style={styles.mockTag} title="Backend unreachable, showing sample data.">
+            Sample data
+          </span>
+        )}
+      </div>
+      <p style={styles.lede}>
+        Every row is one flagged week: the signals read net-positive, and this
+        is what the stock actually did against the S&P 500 over the next five
+        trading days.
+      </p>
+
+      {weeks == null ? (
+        <p style={styles.empty}>Loading…</p>
+      ) : weeks.length === 0 ? (
+        <p style={styles.empty}>
+          No flagged weeks with price history yet. The pipeline is still
+          building history.
+        </p>
+      ) : (
+        <div style={styles.tableWrap}>
+          <table style={{ ...styles.table, minWidth: "520px" }}>
+            <thead>
+              <tr>
+                <th style={{ ...styles.th, textAlign: "left" }}>Week of</th>
+                <th style={{ ...styles.th, textAlign: "left" }}>Company</th>
+                <th style={styles.th}>5d vs S&amp;P</th>
+                <th style={styles.th}>
+                  <span style={styles.thTip}>
+                    Result{" "}
+                    <InfoTip
+                      label="result"
+                      text="Beat = the stock's five-day return exceeded the S&P 500's over the same dates."
+                    />
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {weeks.map((w) => (
+                <tr
+                  key={`${w.ticker}-${w.week_start}`}
+                  style={styles.row}
+                  className="scoreboard-row"
+                  onClick={() => onOpen(w.ticker)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Open the ${w.company} dashboard`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(w.ticker); }
+                  }}
+                >
+                  <td style={{ ...styles.td, textAlign: "left" }}>{formatDate(w.week_start)}</td>
+                  <td style={{ ...styles.td, textAlign: "left" }}>
+                    <span style={styles.flaggedName}>{w.company}</span>
+                    <span style={styles.coTicker}>{w.ticker}</span>
+                  </td>
+                  <td style={{
+                    ...styles.td,
+                    color: w.relative_return > 0 ? "var(--up)" : w.relative_return < 0 ? "var(--down)" : "var(--muted)",
+                    fontWeight: 500,
+                  }}>
+                    {signedPct2(w.relative_return)}
+                  </td>
+                  <td style={styles.td}>
+                    <span style={{ color: w.outperformed ? "var(--up)" : "var(--down)", fontWeight: 500 }}>
+                      {w.outperformed ? "✓ Beat" : "✗ Trailed"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TrackRecord({ onOpen }) {
   const { data } = useBacktest();
   const results = data?.results || null;
   const isMock = data?.source === "mock";
@@ -332,6 +427,8 @@ function TrackRecord() {
           })}
         </div>
       )}
+
+      <FlaggedWeeks onOpen={onOpen} />
     </section>
   );
 }
@@ -399,7 +496,7 @@ export default function Investments({ ticker, onTickerChange }) {
         </section>
       </Reveal>
 
-      <Reveal><TrackRecord /></Reveal>
+      <Reveal><TrackRecord onOpen={openCompany} /></Reveal>
 
       <Reveal>
         <section style={styles.block}>
@@ -589,6 +686,20 @@ const styles = {
     alignSelf: "start",
   },
   cardEmptyNote: { fontSize: "13px", color: "var(--faint)", marginLeft: "10px" },
+
+  // flagged weeks (evidence table under the aggregate cards)
+  flaggedWrap: { marginTop: "48px" },
+  h3: {
+    fontFamily: "var(--serif)",
+    fontSize: "20px",
+    fontWeight: 400,
+    letterSpacing: "-0.01em",
+    color: "var(--ink)",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  flaggedName: { fontFamily: "var(--serif)", fontSize: "16px", color: "var(--ink)" },
 
   link: { color: "var(--sage)", textDecoration: "none", fontWeight: 500, whiteSpace: "nowrap" },
 };
