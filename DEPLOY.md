@@ -10,7 +10,7 @@ Everything is environment-variable driven — no secrets or URLs are hardcoded.
    `REDIS_URL`, which `prism.common.config` reads automatically.
 3. The **API service** builds from `railway.toml` (uses `docker/Dockerfile`),
    runs the idempotent migration, then serves on Railway's `$PORT`. A public URL
-   is assigned (e.g. `https://prism-api.up.railway.app`).
+   is assigned (this project's live one: `https://prism-production-8655.up.railway.app`).
 4. **Set service variables** (Settings → Variables):
    - `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `SERPAPI_KEY` — as needed
    - `CORS_ALLOW_ORIGINS=https://<your-app>.vercel.app` (the frontend URL; add it
@@ -58,7 +58,7 @@ service's internal domain). Simpler first ship: skip Prefect entirely and use th
 
 1. **New Project → import the repo**, set **Root Directory = `frontend`**.
    Vercel auto-detects Vite (build `npm run build`, output `dist`).
-2. **Environment variable:** `VITE_API_URL=https://prism-api.up.railway.app`
+2. **Environment variable:** `VITE_API_URL=https://prism-production-8655.up.railway.app`
    (the Railway API URL from step 1).
 3. Deploy → Vercel assigns `https://<your-app>.vercel.app`.
 
@@ -71,7 +71,7 @@ Set the Railway API's `CORS_ALLOW_ORIGINS` to the Vercel URL and redeploy the
 API service. Verify:
 
 ```bash
-curl -s -i 'https://prism-api.up.railway.app/healthz' \
+curl -s -i 'https://prism-production-8655.up.railway.app/healthz' \
   -H 'Origin: https://<your-app>.vercel.app' | grep -i access-control-allow-origin
 # → access-control-allow-origin: https://<your-app>.vercel.app
 ```
