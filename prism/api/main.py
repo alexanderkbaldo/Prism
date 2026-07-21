@@ -263,10 +263,11 @@ def get_paper_portfolio() -> dict[str, Any]:
             matched, _weeks, records = _records_for_company(c.name)
             records_by_company[matched.name] = records
             tickers[matched.name] = matched.ticker
-        payload = build_portfolio(records_by_company, tickers)
-        payload["trades"] = [_serialise(t) for t in payload["trades"]]
-        payload["curve"] = [_serialise(p) for p in payload["curve"]]
-        return {"source": "db", **payload}
+        inception = datetime.strptime(
+            settings.agent_inception_date, "%Y-%m-%d"
+        ).date()
+        payload = build_portfolio(records_by_company, tickers, inception=inception)
+        return {"source": "db", **_serialise_portfolio(payload)}
     except Exception:  # noqa: BLE001 - DB down; serve clearly-labelled mock
         log.exception("paper portfolio failed; returning mock data")
         return {"source": "mock", **_mock_paper()}
@@ -550,6 +551,20 @@ def _mock_backtest_weeks(company: str | None, limit: int = 12) -> list[dict]:
     return rows[:limit]
 
 
+def _serialise_portfolio(payload: dict) -> dict:
+    """Apply _serialise to every nested trade/curve row (dates -> ISO)."""
+    out = {**payload}
+    out["inception"] = str(payload["inception"]) if payload.get("inception") else None
+    out["trades"] = [_serialise(t) for t in payload.get("trades", [])]
+    out["curve"] = [_serialise(p) for p in payload.get("curve", [])]
+    if payload.get("prelaunch"):
+        out["prelaunch"] = {
+            "summary": payload["prelaunch"]["summary"],
+            "trades": [_serialise(t) for t in payload["prelaunch"]["trades"]],
+        }
+    return out
+
+
 def _mock_paper() -> dict:
     """Sample paper portfolio built by running the REAL paper engine over the
     mock flagged weeks, so the offline page shows the true payload shape."""
@@ -561,7 +576,12 @@ def _mock_paper() -> dict:
     for r in rows:
         by_company.setdefault(r["company"], []).append({**r, "net_positive": True})
         tickers[r["company"]] = r["ticker"]
-    return build_portfolio(by_company, tickers)
+    inception = datetime.strptime(
+        settings.agent_inception_date, "%Y-%m-%d"
+    ).date()
+    return _serialise_portfolio(
+        build_portfolio(by_company, tickers, inception=inception)
+    )
 
 
 def _mock_weekly(company: str) -> list[dict]:

@@ -94,6 +94,37 @@ def test_summarize_portfolio_empty_is_honest():
     assert "No paper trades yet" in s["data_quality"]
 
 
+def test_build_portfolio_inception_splits_live_from_prelaunch():
+    records = {
+        "A": [_rec(date(2026, 7, 13), True, -0.03, 0.0),   # pre-launch loss
+              _rec(date(2026, 7, 20), True, 0.02, 0.01),   # live (on inception)
+              _rec(date(2026, 7, 27), True, 0.01, 0.0)],   # live
+    }
+    out = P.build_portfolio(records, inception=date(2026, 7, 20))
+
+    # Live record starts at $0 on inception: only the two later trades count.
+    assert out["inception"] == date(2026, 7, 20)
+    assert out["summary"]["trades"] == 2
+    assert out["summary"]["pnl"] == pytest.approx(200 + 100)
+    assert [p["week_start"] for p in out["curve"]] == [
+        date(2026, 7, 20), date(2026, 7, 27)]
+    # The pre-launch loss stays published, in its own labelled bucket.
+    assert out["prelaunch"]["summary"]["trades"] == 1
+    assert out["prelaunch"]["summary"]["pnl"] == pytest.approx(-300)
+    assert out["prelaunch"]["trades"][0]["week_start"] == date(2026, 7, 13)
+
+
+def test_build_portfolio_inception_compares_iso_string_weeks():
+    # Mock-path records carry ISO strings, not dates; the split must agree.
+    records = {"A": [
+        {**_rec(date(2026, 7, 13), True, 0.01, 0.0), "week_start": "2026-07-13"},
+        {**_rec(date(2026, 7, 20), True, 0.01, 0.0), "week_start": "2026-07-20"},
+    ]}
+    out = P.build_portfolio(records, inception=date(2026, 7, 20))
+    assert out["summary"]["trades"] == 1
+    assert out["prelaunch"]["summary"]["trades"] == 1
+
+
 def test_build_portfolio_orders_trades_newest_first():
     records = {
         "A": [_rec(date(2026, 1, 5), True, 0.01, 0.0),

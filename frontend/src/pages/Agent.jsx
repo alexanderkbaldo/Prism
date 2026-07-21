@@ -242,6 +242,8 @@ export default function Agent() {
   const { data, error } = usePaperPortfolio();
   const isMock = data?.source === "mock";
   const trades = data?.trades || (error ? [] : null);
+  const prelaunch = data?.prelaunch;
+  const inception = data?.inception;
 
   return (
     <div className="page" style={styles.column}>
@@ -269,11 +271,20 @@ export default function Agent() {
             )}
           </div>
           <h2 style={styles.h2}>How it's doing</h2>
+          {inception && (
+            <p style={styles.lede}>
+              The agent went live on {formatDate(inception)}. Everything in this
+              section starts at $0 from that day; what the same rule did on
+              historical data before go-live is published in full further down.
+            </p>
+          )}
           {data == null && !error ? (
             <p style={styles.empty}>Loading…</p>
           ) : trades && trades.length === 0 ? (
             <p style={styles.empty}>
-              No paper trades yet. The pipeline is still building signal history.
+              No live trades yet. The agent opens its first position the next
+              week the signals flag net-positive; results appear here as trades
+              close.
             </p>
           ) : (
             <>
@@ -289,12 +300,35 @@ export default function Agent() {
         <Reveal>
           <section style={styles.block}>
             <span className="eyebrow">Trade log</span>
-            <h2 style={styles.h2}>Every trade, with the agent's memo</h2>
+            <h2 style={styles.h2}>Every live trade, with the agent's memo</h2>
             <p style={styles.lede}>
               Tap a row to read the memo Claude wrote after that trade closed:
               what the signals showed, how it played out, and the caveat.
             </p>
             <TradeLog trades={trades} />
+          </section>
+        </Reveal>
+      )}
+
+      {prelaunch && prelaunch.trades.length > 0 && (
+        <Reveal>
+          <section style={styles.block}>
+            <span className="eyebrow">Before go-live</span>
+            <h2 style={styles.h2}>The pre-launch backtest</h2>
+            <p style={styles.lede}>
+              Before the agent went live, the same rule was run backward over
+              Prism's signal history. Those simulated trades are published here
+              in full — including the result: across{" "}
+              {prelaunch.summary.trades} trades it finished{" "}
+              <strong style={{ color: pnlColor(prelaunch.summary.pnl) }}>
+                {fmtUsd(prelaunch.summary.pnl)}
+              </strong>{" "}
+              ({fmtPct(prelaunch.summary.win_rate)} of trades beat the S&amp;P
+              leg). A losing backtest on a sample this small says as little as
+              a winning one would; it's shown because a track record you can't
+              audit isn't a track record.
+            </p>
+            <TradeLog trades={prelaunch.trades} />
           </section>
         </Reveal>
       )}

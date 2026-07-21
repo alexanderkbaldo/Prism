@@ -126,11 +126,37 @@ def build_portfolio(
     records_by_company: dict[str, list[dict[str, Any]]],
     tickers: dict[str, str | None] | None = None,
     notional: float = TRADE_NOTIONAL,
+    inception: Any = None,
 ) -> dict[str, Any]:
-    """Trades + curve + summary in one payload (newest trades first)."""
+    """Trades + curve + summary in one payload (newest trades first).
+
+    With an `inception` date the record is split the way a real fund reports:
+    trades from inception onward are the LIVE record (the headline numbers and
+    curve start at $0 on that date), and earlier trades are the PRE-LAUNCH
+    backtest — the same rule run backward over history before the agent went
+    live. Both halves stay published in full; inception changes labelling,
+    never visibility.
+    """
     trades = build_trades(records_by_company, tickers, notional)
+    if inception is None:
+        return {
+            "summary": summarize_portfolio(trades),
+            "curve": equity_curve(trades),
+            "trades": list(reversed(trades)),
+        }
+
+    # week_start is a `date` from the DB but an ISO string in mock payloads;
+    # compare in ISO form, which orders identically either way.
+    cutoff = str(inception)
+    live = [t for t in trades if str(t["week_start"]) >= cutoff]
+    pre = [t for t in trades if str(t["week_start"]) < cutoff]
     return {
-        "summary": summarize_portfolio(trades),
-        "curve": equity_curve(trades),
-        "trades": list(reversed(trades)),
+        "inception": inception,
+        "summary": summarize_portfolio(live),
+        "curve": equity_curve(live),
+        "trades": list(reversed(live)),
+        "prelaunch": {
+            "summary": summarize_portfolio(pre),
+            "trades": list(reversed(pre)),
+        },
     }

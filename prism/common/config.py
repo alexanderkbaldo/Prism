@@ -97,6 +97,11 @@ class Settings(BaseSettings):
     # reviews) present rather than empty on quiet days.
     brief_lookback_hours: int = Field(default=168)
     brief_max_signals: int = Field(default=120)
+    # The paper-trading agent's go-live date (YYYY-MM-DD). Trades from this
+    # date onward are the agent's LIVE record (headline P&L starts at $0 here);
+    # earlier flagged weeks are published separately as the pre-launch backtest.
+    # Standard fund-style reporting: the split changes labelling, not visibility.
+    agent_inception_date: str = Field(default="2026-07-20")
     # Multi-model scoring makes two LLM calls per scored signal (Claude + GPT),
     # so it only fires when keys are present AND this is on.
     #
