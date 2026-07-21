@@ -87,17 +87,26 @@ class Settings(BaseSettings):
     # the current Sonnet (claude-sonnet-4-20250514 / Sonnet 4.0 is deprecated,
     # retires 2026-06-15). Override via env.
     claude_model: str = Field(default="claude-sonnet-4-6")
-    # Per-signal secondary scorers.
-    claude_scoring_model: str = Field(default="claude-sonnet-4-6")
+    # Per-signal secondary scorers. Haiku, not Sonnet: this is short-text
+    # sentiment classification, and it runs once per ingested signal, so the
+    # cheap model is the right default if scoring is ever switched back on.
+    claude_scoring_model: str = Field(default="claude-haiku-4-5-20251001")
     openai_model: str = Field(default="gpt-4o")
     # Window of signals fed into each brief. 7 days (rolling) matches the
     # dashboard's "trailing 7 days" framing and keeps sparse signals (filings,
     # reviews) present rather than empty on quiet days.
     brief_lookback_hours: int = Field(default=168)
     brief_max_signals: int = Field(default=120)
-    # Multi-model scoring makes two LLM calls per scored signal, so it only
-    # fires when keys are present AND this is on.
-    enable_model_scoring: bool = Field(default=True)
+    # Multi-model scoring makes two LLM calls per scored signal (Claude + GPT),
+    # so it only fires when keys are present AND this is on.
+    #
+    # OFF by default: the scores land in `signals.model_scores`, which no API
+    # endpoint, analysis module, or frontend surface currently reads. Running it
+    # over every scraped signal was the bulk of Prism's LLM spend and produced
+    # nothing a user could see. Turn it on (ENABLE_MODEL_SCORING=true) only once
+    # something actually consumes the divergence data; the plumbing below
+    # (circuit breakers, batching, worker mode) still works.
+    enable_model_scoring: bool = Field(default=False)
     # Models are flagged as disagreeing when their sentiment scores differ by
     # more than this absolute amount.
     model_divergence_threshold: float = Field(default=0.3)
