@@ -48,6 +48,15 @@ export const GLOSSARY = [
       "pattern.",
   },
   {
+    id: "sentiment-gate",
+    term: "Sentiment gate",
+    def:
+      "A safeguard on the flag. Search interest and filings measure how much " +
+      "attention a company is getting, not whether it's good attention — a " +
+      "scandal spikes both. So a week whose social sentiment is clearly " +
+      "negative can't be flagged net-positive, however loud the volume.",
+  },
+  {
     id: "paper-trade",
     term: "Paper trade",
     def:

@@ -44,6 +44,13 @@ def test_block_alias_respects_word_boundaries():
 def test_lexicon_sentiment_direction():
     assert lexicon_score("strong growth, bullish buy") > 0
     assert lexicon_score("weak miss, bearish sell") < 0
+
+    # Fraud/distress vocabulary must register: the sentiment gate in
+    # prism/analysis/composite.py depends on these words to veto a scandal week
+    # that the volume signals (trends, filings) would otherwise score as a peak.
+    assert lexicon_score("founders arrested, fraud, bankrupt") == -1.0
+    assert lexicon_score("under investigation, lawsuit, delisted") == -1.0
+    assert lexicon_score("ceo indicted, stock collapsed") == -1.0
     assert lexicon_score("the sky is blue") == 0.0
     assert lexicon_score("") is None
 

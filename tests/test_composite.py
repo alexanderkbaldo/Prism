@@ -150,3 +150,80 @@ def test_group_by_week_builds_per_category_maps():
     assert [w for w, _ in grouped] == [_week(0), _week(1)]
     assert set(grouped[0][1].keys()) == {"sentiment", "hiring"}
     assert grouped[1][1]["trends"]["avg_interest"] == 60.0
+
+
+# --- sentiment gate (the "FTX problem") -------------------------------------
+#
+# Trends and filings measure volume, not direction, so a fraud collapse scores
+# like a triumph: search interest pegs at 100 and EDGAR fills with 8-Ks. These
+# tests pin the veto that stops an obviously-negative week being flagged.
+
+def _week(n: int) -> date:
+    return date(2026, 1, 5) + timedelta(weeks=n)
+
+
+def _quiet(interest: float = 30.0, sentiment: float | None = 0.2) -> dict:
+    """A normal week: modest search interest, mildly positive chatter."""
+    aggs = {"trends": {"avg_interest": interest, "n": 5}}
+    if sentiment is not None:
+        aggs["sentiment"] = {"avg_sentiment": sentiment, "n": 20}
+    return aggs
+
+
+def test_sentiment_veto_fires_only_on_clearly_negative_weeks():
+    assert C.sentiment_veto({"sentiment": {"avg_sentiment": -0.8}}) is True
+    # -0.3 maps to exactly the 0.35 gate; the veto is strict, so this passes.
+    assert C.sentiment_veto({"sentiment": {"avg_sentiment": -0.3}}) is False
+    assert C.sentiment_veto({"sentiment": {"avg_sentiment": -0.1}}) is False
+    assert C.sentiment_veto({"sentiment": {"avg_sentiment": 0.5}}) is False
+
+
+def test_sentiment_veto_absent_data_is_not_bad_news():
+    assert C.sentiment_veto({}) is False
+    assert C.sentiment_veto({"sentiment": {"avg_sentiment": None}}) is False
+    assert C.sentiment_veto({"trends": {"avg_interest": 100.0}}) is False
+
+
+def test_scandal_week_is_not_flagged_net_positive():
+    """The FTX case: max attention, max filings, sentiment on the floor."""
+    weeks = [(_week(i), _quiet()) for i in range(6)]
+    scandal = {
+        "trends": {"avg_interest": 100.0, "n": 200},   # normalises to 1.0
+        "filings": {"n": 12},                          # 12/(12+2) = 0.857
+        "sentiment": {"avg_sentiment": -0.85, "n": 400},
+    }
+    weeks.append((_week(6), scandal))
+
+    scored = C.score_weeks(weeks)
+    last = scored[-1]
+
+    # The composite still reports what it measured: a very loud week.
+    assert last.composite_score > 0.6
+    # But it is not called net-positive, and the veto is recorded.
+    assert last.net_positive is False
+    assert last.sentiment_vetoed is True
+
+
+def test_gates_supply_sentiment_the_score_itself_excludes():
+    """Backtest path: scored on trends only, vetoed on sentiment via `gates`."""
+    weeks = [(_week(i), {"trends": {"avg_interest": 30.0}}) for i in range(6)]
+    weeks.append((_week(6), {"trends": {"avg_interest": 100.0}}))
+    gates = {_week(6): {"sentiment": {"avg_sentiment": -0.9}}}
+
+    ungated = C.score_weeks(weeks)
+    gated = C.score_weeks(weeks, gates=gates)
+
+    # Identical scores; only the flag differs.
+    assert ungated[-1].composite_score == gated[-1].composite_score
+    assert ungated[-1].net_positive is True
+    assert gated[-1].net_positive is False
+    assert gated[-1].sentiment_vetoed is True
+
+
+def test_veto_does_not_disturb_ordinary_positive_weeks():
+    weeks = [(_week(i), _quiet()) for i in range(6)]
+    weeks.append((_week(6), _quiet(interest=90.0, sentiment=0.6)))
+
+    last = C.score_weeks(weeks)[-1]
+    assert last.net_positive is True
+    assert last.sentiment_vetoed is False

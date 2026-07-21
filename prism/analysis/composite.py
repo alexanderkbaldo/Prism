@@ -50,6 +50,11 @@ CATEGORIES = (SENTIMENT, HIRING, TRENDS, REVIEWS, FILINGS)
 HIRING_K = 10.0
 FILINGS_K = 2.0
 
+# Sentiment veto threshold, on the normalised [0, 1] sentiment scale. 0.35 maps
+# back to a raw average sentiment of -0.3: clearly negative, not merely soft, so
+# ordinary bad-news weeks still score normally. See `sentiment_veto`.
+SENTIMENT_GATE = 0.35
+
 # Weeks of prior composites required before "net-positive" is meaningful. With
 # fewer than this, the trailing median is too noisy, so net_positive is left
 # undefined (None) rather than asserted.
@@ -132,10 +137,34 @@ class WeeklyScore:
     composite_score: float
     signals_present: int
     net_positive: bool | None
+    # True when the sentiment gate vetoed an otherwise net-positive week.
+    sentiment_vetoed: bool = False
+
+
+def sentiment_veto(week_aggs: dict[str, dict[str, Any]]) -> bool:
+    """Does this week's social sentiment veto a net-positive flag?
+
+    Two of the five signals — search interest and SEC filings — measure VOLUME,
+    not direction. They cannot tell a product launch from a fraud indictment:
+    a scandal spikes Trends to 100 (normalises to 1.0) and floods EDGAR with
+    8-Ks (~0.85), so a company collapsing can score as its best week ever. The
+    backtest composite is built from exactly those two signals, so without this
+    gate the paper agent would open a long position into a company's collapse.
+
+    The fix is a veto, not a weight: attention is only bullish if the direction
+    agrees. When a week's social sentiment is clearly negative, the week cannot
+    be flagged net-positive no matter how loud the volume signals are. Weeks
+    with no sentiment data are not vetoed — absent data is not bad news.
+    """
+    agg = week_aggs.get(SENTIMENT)
+    if not agg or agg.get("avg_sentiment") is None:
+        return False
+    return normalize_signal(SENTIMENT, agg) < SENTIMENT_GATE
 
 
 def score_weeks(
-    weeks: list[tuple[date, dict[str, dict[str, Any]]]]
+    weeks: list[tuple[date, dict[str, dict[str, Any]]]],
+    gates: dict[date, dict[str, dict[str, Any]]] | None = None,
 ) -> list[WeeklyScore]:
     """Compute composite scores + net-positive flags for a company's weeks.
 
@@ -146,6 +175,13 @@ def score_weeks(
     net-positive if its composite exceeds the median of all STRICTLY-PRIOR
     weeks' composites. It stays None until at least MIN_TRAILING_WEEKS of prior
     history exist (the trailing median would otherwise be too noisy to assert).
+
+    `gates` optionally supplies each week's FULL category aggregates for the
+    sentiment veto (see `sentiment_veto`). Callers that score a restricted set
+    of signals — the backtest uses trends + filings only — pass the unrestricted
+    aggregates here so the veto can see sentiment that the score itself omits.
+    Defaults to the week's own aggregates. The veto flips `net_positive` to
+    False; it never alters `composite_score`, so scores stay comparable.
     """
     # Sort defensively so the trailing-median logic is always chronological.
     ordered = sorted(weeks, key=lambda w: w[0])
@@ -166,12 +202,18 @@ def score_weeks(
         else:
             net_positive = None
 
+        gate_aggs = week_aggs if gates is None else gates.get(week_start, {})
+        vetoed = bool(net_positive) and sentiment_veto(gate_aggs)
+        if vetoed:
+            net_positive = False
+
         scored.append(
             WeeklyScore(
                 week_start=week_start,
                 composite_score=composite,
                 signals_present=present,
                 net_positive=net_positive,
+                sentiment_vetoed=vetoed,
             )
         )
         prior_composites.append(composite)

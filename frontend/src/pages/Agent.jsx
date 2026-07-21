@@ -255,7 +255,10 @@ export default function Agent() {
           SEC-filing signals score net-positive against their own trailing
           pattern, it opens a fixed $10,000 <em>simulated</em> position and
           closes it five trading days later. Claude writes a short memo on each
-          closed trade. Every trade, win or lose, is published below.
+          closed trade. Every trade, win or lose, is published below. One
+          safeguard: those two signals measure attention, not whether it's good
+          attention, so a week with clearly negative social sentiment can't be
+          flagged no matter how loud it gets.
         </p>
         <Disclaimer style={{ marginTop: "24px" }} />
       </div>

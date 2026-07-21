@@ -17,6 +17,16 @@ _NEGATIVE = {
     "bearish", "sell", "short", "dump", "hate", "bad", "weak", "miss",
     "decline", "down", "loss", "lose", "worst", "broken", "declined", "slow",
     "slowing", "bug", "crash", "scam",
+    # Distress and fraud vocabulary. Search interest and SEC filings both spike
+    # during a scandal, so the sentiment gate (prism/analysis/composite.py) is
+    # what stops a collapse reading as a company's best week ever. That gate is
+    # only as good as this list: without these words, posts about an indictment
+    # score neutral and the veto never fires.
+    "fraud", "fraudulent", "scandal", "ponzi", "laundering", "embezzlement",
+    "arrested", "indicted", "indictment", "charged", "probe", "subpoena",
+    "investigation", "lawsuit", "sued", "settlement", "fine", "fined",
+    "bankrupt", "bankruptcy", "insolvent", "collapse", "collapsed", "halted",
+    "delisted", "plunge", "plunged", "tanked", "resign", "resigned",
 }
 
 _WORD = re.compile(r"[a-z']+")

@@ -135,7 +135,10 @@ def backtestable_weeks_from_rows(rows: list[dict[str, Any]]) -> list[C.WeeklySco
     ]
     # Drop weeks with neither backtestable signal present.
     restricted = [(w, a) for w, a in restricted if a]
-    return C.score_weeks(restricted)
+    # Both backtest signals measure volume, so the composite alone cannot tell
+    # good attention from bad. Pass the UNRESTRICTED aggregates as gates so the
+    # sentiment veto still sees sentiment, which the score itself excludes.
+    return C.score_weeks(restricted, gates=dict(grouped))
 
 
 # --- evaluation --------------------------------------------------------------
