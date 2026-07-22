@@ -49,8 +49,9 @@ function MockCard() {
         <span style={s.mockScoreLabel}>Sentiment score</span>
       </div>
       <p style={s.mockBrief}>
-        Elevated search interest and insider activity suggest near-term upside
-        despite recent pullback.
+        Search interest is near a 12-month high and social sentiment is firmly
+        positive — but hiring has cooled. A company drawing attention faster
+        than it's staffing up.
       </p>
       <div style={s.mockChips}>
         {MOCK_CHIPS.map(([label, value]) => (
