@@ -7,7 +7,7 @@ import Footer from "../components/Footer";
 import Disclaimer from "../components/Disclaimer";
 import InfoTip from "../components/InfoTip";
 import { Reveal } from "../anim";
-import { usePaperPortfolio, fetchTradeMemo } from "../hooks/useApi";
+import { usePaperPortfolio, useMonitor, fetchTradeMemo } from "../hooks/useApi";
 import { gloss } from "../utils/glossary";
 
 // Hex palette for recharts (SVG attributes don't resolve CSS vars).
@@ -240,10 +240,14 @@ function ConnectSection() {
 
 export default function Agent() {
   const { data, error } = usePaperPortfolio();
+  const monitor = useMonitor();
   const isMock = data?.source === "mock";
   const trades = data?.trades || (error ? [] : null);
   const prelaunch = data?.prelaunch;
   const inception = data?.inception;
+  // Only claim we're waiting on a signal if collection is actually running.
+  const stale = monitor?.data_fresh === false;
+  const staleDays = Math.round((monitor?.last_signal_age_hours ?? 0) / 24);
 
   return (
     <div className="page" style={styles.column}>
@@ -285,9 +289,21 @@ export default function Agent() {
             <p style={styles.empty}>Loading…</p>
           ) : trades && trades.length === 0 ? (
             <p style={styles.empty}>
-              No live trades yet. The agent opens its first position the next
-              week the signals flag net-positive; results appear here as trades
-              close.
+              {stale ? (
+                <>
+                  <strong>Signal collection is paused.</strong> The pipeline
+                  last collected data {staleDays}{" "}
+                  {staleDays === 1 ? "day" : "days"} ago, so no new weeks are
+                  being scored and the agent isn't opening positions. Live
+                  trades resume once collection restarts.
+                </>
+              ) : (
+                <>
+                  No live trades yet. The agent opens its first position the
+                  next week the signals flag net-positive; results appear here
+                  as trades close.
+                </>
+              )}
             </p>
           ) : (
             <>
@@ -319,17 +335,11 @@ export default function Agent() {
             <span className="eyebrow">Before go-live</span>
             <h2 style={styles.h2}>The pre-launch backtest</h2>
             <p style={styles.lede}>
-              Before the agent went live, the same rule was run backward over
-              Prism's signal history. Those simulated trades are published here
-              in full — including the result: across{" "}
-              {prelaunch.summary.trades} trades it finished{" "}
-              <strong style={{ color: pnlColor(prelaunch.summary.pnl) }}>
-                {fmtUsd(prelaunch.summary.pnl)}
-              </strong>{" "}
-              ({fmtPct(prelaunch.summary.win_rate)} of trades beat the S&amp;P
-              leg). A losing backtest on a sample this small says as little as
-              a winning one would; it's shown because a track record you can't
-              audit isn't a track record.
+              Before go-live, the same rule was run backward over Prism's
+              signal history — {prelaunch.summary.trades} simulated trades,{" "}
+              {fmtPct(prelaunch.summary.win_rate)} of which beat the S&amp;P
+              leg. At this sample size the result is within noise; it's
+              published so the rule can be audited.
             </p>
             <TradeLog trades={prelaunch.trades} />
           </section>

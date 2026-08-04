@@ -175,6 +175,21 @@ export function usePaperPortfolio() {
   return { data, loading, error };
 }
 
+// Scraper health + data freshness. Open endpoint (no API key), and purely
+// advisory: pages use it to avoid implying they're waiting on a signal when
+// collection has actually stopped. Errors are swallowed to `null`.
+export function useMonitor() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    apiFetch("/monitor")
+      .then(setData)
+      .catch(() => setData(null));
+  }, []);
+
+  return data;
+}
+
 // One trade's memo, fetched lazily when a trade row is expanded.
 export function fetchTradeMemo(company, week) {
   return apiFetch(
