@@ -43,9 +43,23 @@ function Hero({ ticker }) {
 }
 
 // "Last updated", reflects data freshness via the most recent signal timestamp.
+// Deliberately a 30-day window, not 7: when collection pauses, the point of
+// this line is to SAY so. On a 7-day window it found nothing and rendered
+// null, so the one element that reports staleness vanished exactly when it
+// mattered, leaving stale cards above it with no explanation.
 function LastUpdated({ ticker }) {
-  const { data } = useSignals(ticker);
+  const { data } = useSignals(ticker, 30);
   const signals = data?.signals ?? [];
+
+  if (data && signals.length === 0) {
+    return (
+      <div style={styles.metaRow}>
+        <span style={styles.stale} title="No signals collected in the last 30 days.">
+          No recent data
+        </span>
+      </div>
+    );
+  }
   if (signals.length === 0) return null;
 
   const latestMs = signals.reduce((max, s) => {
@@ -53,6 +67,9 @@ function LastUpdated({ ticker }) {
     return Number.isNaN(t) ? max : Math.max(max, t);
   }, 0);
   if (!latestMs) return null;
+
+  const ageDays = Math.floor((Date.now() - latestMs) / 86400000);
+  const stale = ageDays > 2;
 
   const when = new Date(latestMs).toLocaleString(undefined, {
     month: "short",
@@ -68,6 +85,14 @@ function LastUpdated({ ticker }) {
       {isMock && (
         <span style={styles.mock} title="The backend is unreachable, showing sample data.">
           Sample data
+        </span>
+      )}
+      {stale && (
+        <span
+          style={styles.stale}
+          title="No new signals have been collected since the date shown."
+        >
+          Collection paused
         </span>
       )}
       <span style={styles.updated}>Last updated · {when}</span>
@@ -156,6 +181,17 @@ const styles = {
     textTransform: "uppercase",
     color: "var(--ink)",
     background: "var(--sage-soft)",
+    padding: "2px 8px",
+    borderRadius: "99px",
+  },
+  stale: {
+    fontSize: "10px",
+    fontWeight: 500,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "var(--clay)",
+    background: "var(--surface)",
+    border: "0.5px solid var(--hairline)",
     padding: "2px 8px",
     borderRadius: "99px",
   },

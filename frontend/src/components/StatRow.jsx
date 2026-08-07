@@ -104,24 +104,56 @@ function deltaFrom(metric, cur, prior) {
 }
 
 export default function StatRow({ ticker, variant = "row" }) {
-  const { data, loading } = useSeries(ticker, 14);
+  // 30 days, not 14: the windows below anchor to the freshest day WITH data, but
+  // that only works if the fetch reaches it. At 14 days a collection pause of
+  // two weeks emptied the response entirely, the anchor fell back to the
+  // viewer's clock, and every card read zero as though nothing had happened.
+  const { data, loading } = useSeries(ticker, 30);
   const series = data?.series || {};
   const cards = variant === "cards";
 
   // Trailing 7 days vs the 7 days before that, anchored to the most recent day
   // with data (not the viewer's clock).
-  const anchor = latestDay(series) || new Date().toISOString().slice(0, 10);
+  const latest = latestDay(series);
+  const anchor = latest || new Date().toISOString().slice(0, 10);
   const curFrom = isoDaysBefore(anchor, 6);
   const today = anchor;
   const priorFrom = isoDaysBefore(anchor, 13);
   const priorTo = isoDaysBefore(anchor, 7);
+
+  // How far behind "now" the freshest data is, so the caption can name the real
+  // period instead of implying these numbers describe the last seven days.
+  const anchorAgeDays = latest
+    ? Math.floor(
+        (Date.parse(new Date().toISOString().slice(0, 10) + "T00:00:00Z") -
+          Date.parse(latest + "T00:00:00Z")) / 86400000
+      )
+    : null;
+  const stale = anchorAgeDays != null && anchorAgeDays > 2;
+  const anchorLabel = latest
+    ? new Date(latest + "T00:00:00Z").toLocaleDateString(undefined, {
+        month: "short", day: "numeric", timeZone: "UTC",
+      })
+    : null;
 
   return (
     <div>
       {/* One explicit window for the whole row, and what the deltas compare
           against, so a reader always knows the period. */}
       <div style={styles.caption}>
-        Trailing 7 days<span style={styles.captionDim}> · change vs prior 7 days</span>
+        {stale ? (
+          <>
+            7 days to {anchorLabel}
+            <span style={styles.captionDim}>
+              {" "}· change vs prior 7 days · no data collected since {anchorLabel}
+            </span>
+          </>
+        ) : (
+          <>
+            Trailing 7 days
+            <span style={styles.captionDim}> · change vs prior 7 days</span>
+          </>
+        )}
       </div>
       <div className="stat-grid" style={{ ...styles.row, ...(cards ? styles.rowCards : {}) }}>
         {STATS.map((stat, i) => {
